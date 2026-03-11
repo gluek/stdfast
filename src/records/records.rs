@@ -4,6 +4,50 @@ use crate::util::*;
 use pyo3::prelude::IntoPyObject;
 use std::io;
 
+/// File Attributes Record
+#[derive(Debug, IntoPyObject)]
+#[allow(dead_code)]
+pub struct FAR {
+    pub cpu_type: u8,
+    pub stdf_ver: u8,
+}
+
+impl From<&RawRecord> for FAR {
+    fn from(record: &RawRecord) -> Self {
+        let contents = &record.contents;
+        let mut offset: usize = 0;
+        let cpu_type = U1(contents, &mut offset);
+        let stdf_ver = U1(contents, &mut offset);
+
+        Self {
+            cpu_type,
+            stdf_ver
+        }
+    }
+}
+
+/// Audit Trail Record
+#[derive(Debug, IntoPyObject)]
+#[allow(dead_code)]
+pub struct ATR {
+    pub mod_tim: u32,
+    pub cmd_line: String,
+}
+
+impl From<&RawRecord> for ATR {
+    fn from(record: &RawRecord) -> Self {
+        let contents = &record.contents;
+        let mut offset: usize = 0;
+        let mod_tim = U4(contents, &mut offset);
+        let cmd_line = Cn(contents, &mut offset);
+
+        Self {
+            mod_tim,
+            cmd_line,
+        }
+    }
+}
+
 /// Master Information Record
 #[derive(Debug, IntoPyObject)]
 #[allow(dead_code)]
@@ -958,6 +1002,240 @@ impl From<&RawRecord> for PMR {
     }
 }
 
+/// Pin Group Record
+#[derive(Debug, IntoPyObject)]
+#[allow(dead_code)]
+#[allow(non_snake_case)]
+pub struct PGR {
+    pub grp_indx: u16,
+    pub grp_nam: String,
+    pub indx_cnt: u16,
+    pub pmr_indx: Vec<u16>,
+}
+
+impl From<&RawRecord> for PGR {
+    fn from(record: &RawRecord) -> Self {
+        let contents = &record.contents;
+        let mut offset: usize = 0;
+
+        let grp_indx = U2(contents, &mut offset);
+        let grp_nam = Cn(contents, &mut offset);
+        let indx_cnt = U2(contents, &mut offset);
+        let pmr_indx = kxU2(contents, indx_cnt.into(), &mut offset);
+
+        Self {
+            grp_indx,
+            grp_nam,
+            indx_cnt,
+            pmr_indx
+        }
+    }
+}
+
+/// Pin List Record
+#[derive(Debug, IntoPyObject)]
+#[allow(dead_code)]
+#[allow(non_snake_case)]
+pub struct PLR {
+    pub grp_cnt: u16,
+    pub grp_indx: Vec<u16>,
+    pub grp_mode: Vec<u16>,
+    pub grp_radx: Vec<u8>,
+    pub pgm_char: Vec<String>,
+    pub rtn_char: Vec<String>,
+    pub pgm_chal: Vec<String>,
+    pub rtn_chal: Vec<String>
+}
+
+impl From<&RawRecord> for PLR {
+    fn from(record: &RawRecord) -> Self {
+        let contents = &record.contents;
+        let mut offset: usize = 0;
+
+        let grp_cnt = U2(contents, &mut offset);
+        let grp_indx = kxU2(contents, grp_cnt.into(), &mut offset);
+        let grp_mode = kxU2(contents, grp_cnt.into(), &mut offset);
+        let grp_radx = kxU1(contents, grp_cnt.into(), &mut offset);
+        let pgm_char = kxCn(contents, grp_cnt.into(), &mut offset);
+        let rtn_char = kxCn(contents, grp_cnt.into(), &mut offset);
+        let pgm_chal = kxCn(contents, grp_cnt.into(), &mut offset);
+        let rtn_chal = kxCn(contents, grp_cnt.into(), &mut offset);
+
+        Self {
+            grp_cnt,
+            grp_indx,
+            grp_mode,
+            grp_radx,
+            pgm_char,
+            rtn_char,
+            pgm_chal,
+            rtn_chal,
+        }
+    }
+}
+
+/// Retest Data Record
+#[derive(Debug, IntoPyObject)]
+#[allow(dead_code)]
+#[allow(non_snake_case)]
+pub struct RDR {
+    pub num_bins: u16,
+    pub rtst_bin: Vec<u16>,
+}
+
+impl From<&RawRecord> for RDR {
+    fn from(record: &RawRecord) -> Self {
+        let contents = &record.contents;
+        let mut offset: usize = 0;
+        let num_bins = U2(contents, &mut offset);
+        let rtst_bin = kxU2(contents, num_bins.into(), &mut offset);
+
+        Self {
+            num_bins,
+            rtst_bin
+        }
+    }
+}
+
+/// Wafer Configuration Record
+#[derive(Debug, IntoPyObject)]
+#[allow(dead_code)]
+#[allow(non_snake_case)]
+pub struct WCR {
+    pub wafr_siz: f32,
+    pub die_ht: f32,
+    pub die_wid: f32,
+    pub wf_units: u8,
+    pub wf_flat: char,
+    pub center_x: i16,
+    pub center_y: i16,
+    pub pos_x: char,
+    pub pos_y: char,
+}
+
+impl From<&RawRecord> for WCR {
+    fn from(record: &RawRecord) -> Self {
+        let contents = &record.contents;
+        let mut offset: usize = 0;
+        let wafr_siz = R4(contents, &mut offset);
+        let die_ht = R4(contents, &mut offset);
+        let die_wid = R4(contents, &mut offset);
+        let wf_units = U1(contents, &mut offset);
+        let wf_flat = C1(contents, &mut offset);
+        let center_x = I2(contents, &mut offset);
+        let center_y = I2(contents, &mut offset);
+        let pos_x = C1(contents, &mut offset);
+        let pos_y = C1(contents, &mut offset);
+
+        Self {
+            wafr_siz,
+            die_ht,
+            die_wid,
+            wf_units,
+            wf_flat,
+            center_x,
+            center_y,
+            pos_x,
+            pos_y,
+        }
+    }
+}
+
+/// Begin Program Section Record
+#[derive(Debug, IntoPyObject)]
+#[allow(dead_code)]
+#[allow(non_snake_case)]
+pub struct BPS {
+    pub  seq_name: String,
+}
+
+impl From<&RawRecord> for BPS {
+    fn from(record: &RawRecord) -> Self {
+        let contents = &record.contents;
+        let mut offset: usize = 0;
+        let seq_name = Cn(contents, &mut offset);
+
+        Self {
+            seq_name,
+        }
+    }
+}
+
+/// Begin Program Section Record
+/// Does not contain any data
+/// Location: Following the corresponding BPS and before PRR in the data stream.
+/// Possible Use:
+/// When performing analyses on a particular program segment’s test.
+/// Note that pairs of BPS and EPS records can be nested: for example, when one sequencer
+/// calls another. In this case, the sequence of records could look like this:
+///     BPS SEQ_NAME = sequence-1
+///     BPS SEQ_NAME = sequence-2
+///     EPS (end of sequence-2)
+///     EPS (end of sequence-1)
+/// Because an EPS record does not contain the name of the sequencer, it should be
+/// assumed that each EPS record matches the last unmatched BPS record.
+#[derive(Debug)]
+#[allow(dead_code)]
+pub struct EPS;
+
+#[derive(Debug)]
+pub enum GenData {
+    U1(u16),
+    U2(u16),
+    U4(u32),
+    I1(i8),
+    I2(i16),
+    I4(i32),
+    R4(f32),
+    R8(f64),
+    Cn(String),
+    Bn(Vec<u8>),
+    Dn(Vec<u8>),
+    N1(u8)
+}
+
+/// Generic Data Record
+// #[derive(Debug, IntoPyObject)]
+// #[allow(dead_code)]
+// #[allow(non_snake_case)]
+// pub struct GDR {
+//     pub fld_cnt: u16,
+//     gen_data: Vec<GenData>,
+// }
+
+// impl From<&RawRecord> for GDR {
+//     fn from(record: &RawRecord) -> Self {
+//         let contents = &record.contents;
+//         let mut offset: usize = 0;
+//         let seq_name = Cn(contents, &mut offset);
+
+//         Self {
+//             seq_name,
+//         }
+//     }
+// }
+
+/// Datalog Text Record
+#[derive(Debug, IntoPyObject)]
+#[allow(dead_code)]
+#[allow(non_snake_case)]
+pub struct DTR {
+    pub  text_dat: String,
+}
+
+impl From<&RawRecord> for DTR {
+    fn from(record: &RawRecord) -> Self {
+        let contents = &record.contents;
+        let mut offset: usize = 0;
+        let text_dat = Cn(contents, &mut offset);
+
+        Self {
+            text_dat,
+        }
+    }
+}
+
+
 #[derive(Debug)]
 #[allow(dead_code)]
 pub struct NotImplementedRecord {}
@@ -965,30 +1243,30 @@ pub struct NotImplementedRecord {}
 /// An enum of all the concrete record types
 #[derive(Debug)]
 pub enum Record {
-    FAR(NotImplementedRecord),
-    ATR(NotImplementedRecord),
+    FAR(FAR),
+    ATR(ATR),
     MIR(MIR),
     MRR(MRR),
     PCR(PCR),
     HBR(HBR),
     SBR(SBR),
     PMR(PMR),
-    PGR(NotImplementedRecord),
-    PLR(NotImplementedRecord),
-    RDR(NotImplementedRecord),
+    PGR(PGR),
+    PLR(PLR),
+    RDR(RDR),
     SDR(SDR),
     WIR(WIR),
     WRR(WRR),
-    WCR(NotImplementedRecord),
+    WCR(WCR),
     PIR(PIR),
     PRR(PRR),
     TSR(TSR),
     PTR(PTR),
     MPR(MPR),
     FTR(FTR),
-    BPS(NotImplementedRecord),
-    EPS(NotImplementedRecord),
+    BPS(BPS),
+    EPS(EPS),
     GDR(NotImplementedRecord),
-    DTR(NotImplementedRecord),
+    DTR(DTR),
     InvalidRecord(NotImplementedRecord),
 }

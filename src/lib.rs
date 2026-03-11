@@ -1,6 +1,6 @@
-//! # stupidf
+//! # stdfast
 //!
-//! `stupidf` is a library for limited parsing of STDF files. The `STDF` structure can be used
+//! `stdfast` is a library for limited parsing of STDF files. The `STDF` structure can be used
 //! directly in rust, or alternatively sent out to Python using the `parse_stdf` function.
 //!
 //! # Example
@@ -16,7 +16,7 @@
 //!
 //! Also contains Python bindings to this functionality, e.g.
 //! ```
-//!    import stupidf as sf
+//!    import stdfast as sf
 //!    stdf = sf.parse_stdf("my_stdf.stdf")
 //!    stdf['df']
 //! ````

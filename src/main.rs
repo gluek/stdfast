@@ -2,7 +2,7 @@ use clap::Parser;
 use std::env;
 
 use polars::frame::DataFrame;
-use stupidf::{data::STDF, test_information::FullTestInformation};
+use stdfast::{data::STDF, test_information::FullTestInformation};
 
 #[derive(Parser)]
 #[command(version, about, long_about = None)]

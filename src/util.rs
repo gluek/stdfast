@@ -129,3 +129,19 @@ pub fn kxN1(contents: &[u8], num: usize, offset: &mut usize) -> Vec<u8> {
     }
     v
 }
+
+/// Parse an array of string and advance the offset
+pub fn kxCn(bytes: &[u8], num: usize, offset: &mut usize) -> Vec<String> {
+    let mut v = Vec::with_capacity(num);
+    for _ in 0..num {
+        let length = bytes[*offset] as usize;
+        let result = String::from_utf8(bytes[*offset + 1..*offset + 1 + length].to_vec());
+        if let Ok(s) = result {
+            *offset += 1 + length;
+            v.push(s);
+        } else {
+            panic!("Failed to parse kxCn from {offset} with num {num} and length {length} from\n{bytes:#?}");
+        }
+    }
+    v
+}

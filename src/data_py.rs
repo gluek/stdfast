@@ -1,10 +1,10 @@
-//! `stupidf_py` contains the Python bindings and code for passing the data to Python
+//! `stdfast_py` contains the Python bindings and code for passing the data to Python
 //!
-//! The relevant function is `stupidf.parse_stdf`
+//! The relevant function is `stdfast.parse_stdf`
 //!
 //! # Example
 //! ```
-//! import stupidf as sf
+//! import stdfast as sf
 //! stdf = sf.parse_stdf("my_stdf.stdf")
 //! stdf['df']
 //! ```
@@ -116,7 +116,7 @@ fn parse_stdf(fname: &str) -> PyResult<PySTDF> {
 ///
 /// # Example
 /// ```
-///    import stupidf as sf
+///    import stdfast as sf
 ///    rows = sf.get_rows("my_stdf.stdf")
 ///    rows[0]
 /// ````
@@ -148,7 +148,7 @@ fn get_rows(fname: &str) -> PyResult<Vec<Row>> {
 ///
 /// # Example
 /// ```
-///    import stupidf as sf
+///    import stdfast as sf
 ///    raw_stdf = sf.get_raw_stdf("my_stdf.stdf")
 ///    raw_stdf['master_information']
 /// ````

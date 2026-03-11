@@ -1,16 +1,16 @@
 [package]
-name = "stupidf"
+name = "stdfast"
 version = "0.5.1"
 edition = "2024"
 description = "Parsing of STDF file format to DataFrame with Python bindings"
-license = "MIT"
+license = "BSD-2"
 repository = "https://github.com/jlazear/stupidf"
 readme = "README.md"
 categories = ["parser-implementations"]
 keywords = ["semiconductor", "stdf", "ate"]
 
 [lib]
-name = "stupidf"
+name = "stdfast"
 crate-type = ["lib", "cdylib"]
 
 [dependencies]
