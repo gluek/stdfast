@@ -2,6 +2,8 @@
 
 #![allow(non_snake_case)]
 
+use std::fmt;
+
 /// Parse a uint8 and advance the `offset`
 pub fn U1(bytes: &[u8], offset: &mut usize) -> u8 {
     let x = bytes[*offset];
@@ -153,7 +155,7 @@ pub fn kxCn(bytes: &[u8], num: usize, offset: &mut usize) -> Vec<String> {
     v
 }
 
-#[derive(Debug)]
+#[derive(Debug, Clone)]
 pub enum GenData {
     U1(u8),
     U2(u16),
@@ -169,6 +171,24 @@ pub enum GenData {
     N1(u8)
 }
 
+impl fmt::Display for GenData {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        match self {
+            GenData::U1(v) => write!(f, "{}", v),
+            GenData::U2(v) => write!(f, "{}", v),
+            GenData::U4(v) => write!(f, "{}", v),
+            GenData::I1(v) => write!(f, "{}", v),
+            GenData::I2(v) => write!(f, "{}", v),
+            GenData::I4(v) => write!(f, "{}", v),
+            GenData::R4(v) => write!(f, "{}", v),
+            GenData::R8(v) => write!(f, "{}", v),
+            GenData::Cn(v) => write!(f, "{}", v),
+            GenData::Bn(v) => write!(f, "{}", v.iter().map(|x| format!("{:02X}", x)).collect::<Vec<_>>().join("")),
+            GenData::Dn(v) => write!(f, "{}", v.iter().map(|x| format!("{:02X}", x)).collect::<Vec<_>>().join("")),
+            GenData::N1(v) => write!(f, "{}", v),
+        }
+    }
+}
 
 /// Parse an array of GenData and advance the offset
 pub fn Vn(bytes: &[u8], num: usize, offset: &mut usize) -> Vec<GenData> {

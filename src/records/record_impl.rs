@@ -2,10 +2,10 @@ use super::Records;
 use crate::records::RawRecord;
 use crate::util::*;
 use pyo3::prelude::IntoPyObject;
-use std::io;
+use std::{io, fmt};
 
 /// File Attributes Record
-#[derive(Debug, IntoPyObject)]
+#[derive(Debug, IntoPyObject, Clone)]
 #[allow(dead_code)]
 pub struct FAR {
     pub cpu_type: u8,
@@ -26,8 +26,14 @@ impl From<&RawRecord> for FAR {
     }
 }
 
+impl fmt::Display for FAR {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        write!(f, "FAR:{}|{}", self.cpu_type, self.stdf_ver)
+    }
+}
+
 /// Audit Trail Record
-#[derive(Debug, IntoPyObject)]
+#[derive(Debug, IntoPyObject, Clone)]
 #[allow(dead_code)]
 pub struct ATR {
     pub mod_tim: u32,
@@ -48,8 +54,14 @@ impl From<&RawRecord> for ATR {
     }
 }
 
+impl fmt::Display for ATR {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        write!(f, "ATR:{}|{}", self.mod_tim, self.cmd_line)
+    }
+}
+
 /// Master Information Record
-#[derive(Debug, IntoPyObject)]
+#[derive(Debug, IntoPyObject, Clone)]
 #[allow(dead_code)]
 pub struct MIR {
     pub setup_t: u32,
@@ -178,6 +190,51 @@ impl From<&RawRecord> for MIR {
     }
 }
 
+impl fmt::Display for MIR {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        let mut result = Vec::new();
+        result.push(self.lot_id.to_string());
+        result.push(self.part_typ.to_string());
+        result.push(self.job_nam.to_string());
+        result.push(self.node_nam.to_string());
+        result.push(self.tstr_typ.to_string());
+        result.push(self.setup_t.to_string());
+        result.push(self.start_t.to_string());
+        result.push(self.oper_nam.to_string());
+        result.push(self.mode_cod.to_string());
+        result.push(self.stat_num.to_string());
+        result.push(self.sblot_id.to_string());
+        result.push(self.test_cod.to_string());
+        result.push(self.rtst_cod.to_string());
+        result.push(self.job_rev.to_string());
+        result.push(self.exec_typ.to_string());
+        result.push(self.exec_ver.to_string());
+        result.push(self.prot_cod.to_string());
+        result.push(self.cmod_cod.to_string());
+        result.push(self.burn_tim.to_string());
+        result.push(self.tst_temp.to_string());
+        result.push(self.user_txt.to_string());
+        result.push(self.aux_file.to_string());
+        result.push(self.pkg_typ.to_string());
+        result.push(self.famly_id.to_string());
+        result.push(self.date_cod.to_string());
+        result.push(self.facil_id.to_string());
+        result.push(self.floor_id.to_string());
+        result.push(self.proc_id.to_string());
+        result.push(self.oper_frq.to_string());
+        result.push(self.spec_nam.to_string());
+        result.push(self.spec_ver.to_string());
+        result.push(self.flow_id.to_string());
+        result.push(self.setup_id.to_string());
+        result.push(self.dsgn_rev.to_string());
+        result.push(self.eng_id.to_string());
+        result.push(self.rom_cod.to_string());
+        result.push(self.serl_num.to_string());
+        result.push(self.supr_nam.to_string());
+        write!(f, "MIR:{}", result.join("|"))
+    }
+}
+
 impl MIR {
     /// Get the MIR from a file at `fname`
     ///
@@ -282,8 +339,36 @@ impl From<&RawRecord> for SDR {
     }
 }
 
+impl fmt::Display for SDR {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        let site_num_str = self.site_num.iter().map(|x| x.to_string()).collect::<Vec<_>>().join(",");
+        let mut result = Vec::new();
+        result.push(self.head_num.to_string());
+        result.push(self.site_grp.to_string());
+        result.push(self.site_cnt.to_string());
+        result.push(site_num_str);
+        result.push(self.hand_typ.to_string());
+        result.push(self.hand_id.to_string());
+        result.push(self.card_typ.to_string());
+        result.push(self.card_id.to_string());
+        result.push(self.load_typ.to_string());
+        result.push(self.load_id.to_string());
+        result.push(self.dib_typ.to_string());
+        result.push(self.dib_id.to_string());
+        result.push(self.cabl_typ.to_string());
+        result.push(self.cabl_id.to_string());
+        result.push(self.cont_typ.to_string());
+        result.push(self.cont_id.to_string());
+        result.push(self.lasr_typ.to_string());
+        result.push(self.lasr_id.to_string());
+        result.push(self.extr_typ.to_string());
+        result.push(self.extr_i.to_string());
+        write!(f, "SDR:{}", result.join("|"))
+    }
+}
+
 /// Test Synopsis Record
-#[derive(Debug, IntoPyObject)]
+#[derive(Debug, IntoPyObject, Clone)]
 #[allow(dead_code)]
 #[allow(non_snake_case)]
 pub struct TSR {
@@ -347,6 +432,28 @@ impl From<&RawRecord> for TSR {
     }
 }
 
+impl fmt::Display for TSR {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        let mut result = Vec::new();
+        result.push(self.head_num.to_string());
+        result.push(self.site_num.to_string());
+        result.push(self.test_num.to_string());
+        result.push(self.test_nam.to_string());
+        result.push(self.test_typ.to_string());
+        result.push(self.exec_cnt.to_string());
+        result.push(self.fail_cnt.to_string());
+        result.push(self.alrm_cnt.to_string());
+        result.push(self.seq_name.to_string());
+        result.push(self.test_lbl.to_string());
+        result.push(self.test_tim.to_string());
+        result.push(self.test_min.to_string());
+        result.push(self.test_max.to_string());
+        result.push(self.tst_sums.to_string());
+        result.push(self.tst_sqrs.to_string());
+        write!(f, "TSR:{}", result.join("|"))
+    }
+}
+
 /// Software Bin Record
 #[derive(Debug, Clone, IntoPyObject)]
 #[allow(dead_code)]
@@ -382,6 +489,19 @@ impl From<&RawRecord> for SBR {
     }
 }
 
+impl fmt::Display for SBR {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        let mut result = Vec::new();
+        result.push(self.head_num.to_string());
+        result.push(self.site_num.to_string());
+        result.push(self.sbin_num.to_string());
+        result.push(self.sbin_cnt.to_string());
+        result.push(self.sbin_pf.to_string());
+        result.push(self.sbin_nam.to_string());
+        write!(f, "SBR:{}", result.join("|"))
+    }
+}
+
 /// Wafer Information Record
 #[derive(Debug, Clone, IntoPyObject)]
 #[allow(dead_code)]
@@ -411,8 +531,19 @@ impl From<&RawRecord> for WIR {
     }
 }
 
+impl fmt::Display for WIR {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        let mut result = Vec::new();
+        result.push(self.head_num.to_string());
+        result.push(self.start_t.to_string());
+        result.push(self.site_grp.to_string());
+        result.push(self.wafer_id.to_string());
+        write!(f, "WIR:{}", result.join("|"))
+    }
+}
+
 /// Wafer Results Record
-#[derive(Debug, IntoPyObject)]
+#[derive(Debug, IntoPyObject, Clone)]
 #[allow(dead_code)]
 #[allow(non_snake_case)]
 pub struct WRR {
@@ -470,6 +601,27 @@ impl From<&RawRecord> for WRR {
     }
 }
 
+impl fmt::Display for WRR {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        let mut result = Vec::new();
+        result.push(self.head_num.to_string());
+        result.push(self.finish_t.to_string());
+        result.push(self.part_cnt.to_string());
+        result.push(self.wafer_id.to_string());
+        result.push(self.site_grp.to_string());
+        result.push(self.rtst_cnt.to_string());
+        result.push(self.abrt_cnt.to_string());
+        result.push(self.good_cnt.to_string());
+        result.push(self.func_cnt.to_string());
+        result.push(self.fabwf_id.to_string());
+        result.push(self.frame_id.to_string());
+        result.push(self.mask_id.to_string());
+        result.push(self.usr_desc.to_string());
+        result.push(self.exc_desc.to_string());
+        write!(f, "WRR:{}", result.join("|"))
+    }
+}
+
 /// Hardware Bin Record
 #[derive(Debug, Clone, IntoPyObject)]
 #[allow(dead_code)]
@@ -505,8 +657,21 @@ impl From<&RawRecord> for HBR {
     }
 }
 
+impl fmt::Display for HBR {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        let mut result = Vec::new();
+        result.push(self.head_num.to_string());
+        result.push(self.site_num.to_string());
+        result.push(self.hbin_num.to_string());
+        result.push(self.hbin_cnt.to_string());
+        result.push(self.hbin_pf.to_string());
+        result.push(self.hbin_nam.to_string());
+        write!(f, "HBR:{}", result.join("|"))
+    }
+}
+
 /// Part Count Record
-#[derive(Debug, IntoPyObject)]
+#[derive(Debug, IntoPyObject, Clone)]
 #[allow(dead_code)]
 #[allow(non_snake_case)]
 pub struct PCR {
@@ -543,8 +708,22 @@ impl From<&RawRecord> for PCR {
     }
 }
 
+impl fmt::Display for PCR {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        let mut result = Vec::new();
+        result.push(self.head_num.to_string());
+        result.push(self.site_num.to_string());
+        result.push(self.part_cnt.to_string());
+        result.push(self.rtst_cnt.to_string());
+        result.push(self.abrt_cnt.to_string());
+        result.push(self.good_cnt.to_string());
+        result.push(self.func_cnt.to_string());
+        write!(f, "PCR:{}", result.join("|"))
+    }
+}
+
 /// Part Information Record
-#[derive(Debug, IntoPyObject)]
+#[derive(Debug, IntoPyObject, Clone)]
 #[allow(dead_code)]
 #[allow(non_snake_case)]
 pub struct PIR {
@@ -562,8 +741,14 @@ impl From<&RawRecord> for PIR {
     }
 }
 
+impl fmt::Display for PIR {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        write!(f, "PIR:{}|{}", self.head_num, self.site_num)
+    }
+}
+
 /// Part Results Record
-#[derive(Debug, IntoPyObject)]
+#[derive(Debug, IntoPyObject, Clone)]
 #[allow(dead_code)]
 #[allow(non_snake_case)]
 pub struct PRR {
@@ -615,8 +800,28 @@ impl From<&RawRecord> for PRR {
     }
 }
 
+impl fmt::Display for PRR {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        let part_fix_str = self.part_fix.iter().map(|x| format!("{:02X}", x)).collect::<Vec<_>>().join("");
+        let mut result = Vec::new();
+        result.push(self.head_num.to_string());
+        result.push(self.site_num.to_string());
+        result.push(self.part_id.to_string());
+        result.push(self.num_test.to_string());
+        result.push(format!("{:02X}", self.part_flg));
+        result.push(self.hard_bin.to_string());
+        result.push(self.soft_bin.to_string());
+        result.push(self.x_coord.to_string());
+        result.push(self.y_coord.to_string());
+        result.push(self.test_t.to_string());
+        result.push(self.part_txt.to_string());
+        result.push(part_fix_str);
+        write!(f, "PRR:{}", result.join("|"))
+    }
+}
+
 /// Master Results Record
-#[derive(Debug, IntoPyObject)]
+#[derive(Debug, IntoPyObject, Clone)]
 #[allow(dead_code)]
 #[allow(non_snake_case)]
 pub struct MRR {
@@ -644,8 +849,19 @@ impl From<&RawRecord> for MRR {
     }
 }
 
+impl fmt::Display for MRR {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        let mut result = Vec::new();
+        result.push(self.finish_t.to_string());
+        result.push(self.disp_cod.to_string());
+        result.push(self.usr_desc.to_string());
+        result.push(self.exc_desc.to_string());
+        write!(f, "MRR:{}", result.join("|"))
+    }
+}
+
 /// Parametric Test Record
-#[derive(Debug, IntoPyObject)]
+#[derive(Debug, IntoPyObject, Clone)]
 #[allow(dead_code)]
 #[allow(non_snake_case)]
 pub struct PTR {
@@ -754,8 +970,34 @@ impl PTR {
     }
 }
 
+impl fmt::Display for PTR {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        let mut result = Vec::new();
+        result.push(self.test_num.to_string());
+        result.push(self.head_num.to_string());
+        result.push(self.site_num.to_string());
+        result.push(self.result.to_string());
+        result.push(format!("{:02X}", self.test_flg));
+        result.push(format!("{:02X}", self.parm_flg));
+        result.push(self.test_txt.to_string());
+        result.push(self.alarm_id.to_string());
+        result.push(self.units.to_string());
+        result.push(self.lo_limit.to_string());
+        result.push(self.hi_limit.to_string());
+        result.push(self.c_resfmt.to_string());
+        result.push(self.c_llmfmt.to_string());
+        result.push(self.c_hlmfmt.to_string());
+        result.push(self.lo_spec.to_string());
+        result.push(self.hi_spec.to_string());
+        result.push(self.res_scal.to_string());
+        result.push(self.llm_scal.to_string());
+        result.push(self.hlm_scal.to_string());
+        write!(f, "PTR:{}", result.join("|"))
+    }
+}
+
 /// Functional Test Record
-#[derive(Debug, IntoPyObject)]
+#[derive(Debug, IntoPyObject, Clone)]
 #[allow(dead_code)]
 #[allow(non_snake_case)]
 pub struct FTR {
@@ -864,8 +1106,46 @@ impl FTR {
     }
 }
 
+impl fmt::Display for FTR {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        let rtn_indx_str = self.rtn_indx.iter().map(|x| x.to_string()).collect::<Vec<_>>().join(",");
+        let rtn_stat_str = self.rtn_stat.iter().map(|x| x.to_string()).collect::<Vec<_>>().join(",");
+        let pgm_indx_str = self.pgm_indx.iter().map(|x| x.to_string()).collect::<Vec<_>>().join(",");
+        let pgm_stat_str = self.pgm_stat.iter().map(|x| x.to_string()).collect::<Vec<_>>().join(",");
+        let fail_pin_str = self.fail_pin.iter().map(|x| format!("{:02X}", x)).collect::<Vec<_>>().join("");
+        let spin_map_str = self.spin_map.iter().map(|x| format!("{:02X}", x)).collect::<Vec<_>>().join("");
+        let mut result = Vec::new();
+        result.push(self.test_num.to_string());
+        result.push(self.head_num.to_string());
+        result.push(self.site_num.to_string());
+        result.push(format!("{:02X}", self.test_flg));
+        result.push(self.vect_nam.to_string());
+        result.push(self.time_set.to_string());
+        result.push(self.cycl_cnt.to_string());
+        result.push(self.rel_vadr.to_string());
+        result.push(self.rept_cnt.to_string());
+        result.push(self.num_fail.to_string());
+        result.push(self.xfail_ad.to_string());
+        result.push(self.yfail_ad.to_string());
+        result.push(self.vect_off.to_string());
+        result.push(rtn_indx_str);
+        result.push(rtn_stat_str);
+        result.push(pgm_indx_str);
+        result.push(pgm_stat_str);
+        result.push(fail_pin_str);
+        result.push(self.op_code.to_string());
+        result.push(self.test_txt.to_string());
+        result.push(self.alarm_id.to_string());
+        result.push(self.prog_txt.to_string());
+        result.push(self.rslt_txt.to_string());
+        result.push(self.patg_num.to_string());
+        result.push(spin_map_str);
+        write!(f, "FTR:{}", result.join("|"))
+    }
+}
+
 /// Multiple-Result Parametric Record
-#[derive(Debug, IntoPyObject)]
+#[derive(Debug, IntoPyObject, Clone)]
 #[allow(dead_code)]
 #[allow(non_snake_case)]
 pub struct MPR {
@@ -963,8 +1243,42 @@ impl From<&RawRecord> for MPR {
     }
 }
 
+impl fmt::Display for MPR {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        let rtn_stat_str = self.rtn_stat.iter().map(|x| x.to_string()).collect::<Vec<_>>().join(",");
+        let rtn_rslt_str = self.rtn_rslt.iter().map(|x| x.to_string()).collect::<Vec<_>>().join(",");
+        let rtn_indx_str = self.rtn_indx.iter().map(|x| x.to_string()).collect::<Vec<_>>().join(",");
+        let mut result = Vec::new();
+        result.push(self.test_num.to_string());
+        result.push(self.head_num.to_string());
+        result.push(self.site_num.to_string());
+        result.push(rtn_stat_str);
+        result.push(rtn_rslt_str);
+        result.push(format!("{:02X}", self.test_flg));
+        result.push(self.test_txt.to_string());
+        result.push(self.alarm_id.to_string());
+        result.push(format!("{:02X}", self.parm_flg));
+        result.push(self.units.to_string());
+        result.push(self.lo_limit.to_string());
+        result.push(self.hi_limit.to_string());
+        result.push(self.start_in.to_string());
+        result.push(self.incr_in.to_string());
+        result.push(self.units_in.to_string());
+        result.push(rtn_indx_str);
+        result.push(self.c_resfmt.to_string());
+        result.push(self.c_llmfmt.to_string());
+        result.push(self.c_hlmfmt.to_string());
+        result.push(self.lo_spec.to_string());
+        result.push(self.hi_spec.to_string());
+        result.push(self.res_scal.to_string());
+        result.push(self.llm_scal.to_string());
+        result.push(self.hlm_scal.to_string());
+        write!(f, "MPR:{}", result.join("|"))
+    }
+}
+
 /// Pin Map Record
-#[derive(Debug, IntoPyObject)]
+#[derive(Debug, IntoPyObject, Clone)]
 #[allow(dead_code)]
 #[allow(non_snake_case)]
 pub struct PMR {
@@ -1002,8 +1316,22 @@ impl From<&RawRecord> for PMR {
     }
 }
 
+impl fmt::Display for PMR {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        let mut result = Vec::new();
+        result.push(self.pmr_indx.to_string());
+        result.push(self.chan_typ.to_string());
+        result.push(self.chan_nam.to_string());
+        result.push(self.phy_nam.to_string());
+        result.push(self.log_nam.to_string());
+        result.push(self.head_num.to_string());
+        result.push(self.site_num.to_string());
+        write!(f, "PMR:{}", result.join("|"))
+    }
+}
+
 /// Pin Group Record
-#[derive(Debug, IntoPyObject)]
+#[derive(Debug, IntoPyObject, Clone)]
 #[allow(dead_code)]
 #[allow(non_snake_case)]
 pub struct PGR {
@@ -1032,8 +1360,20 @@ impl From<&RawRecord> for PGR {
     }
 }
 
+impl fmt::Display for PGR {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        let pmr_indx_str = self.pmr_indx.iter().map(|x| x.to_string()).collect::<Vec<_>>().join(",");
+        let mut result = Vec::new();
+        result.push(self.grp_indx.to_string());
+        result.push(self.grp_nam.to_string());
+        result.push(self.indx_cnt.to_string());
+        result.push(pmr_indx_str);
+        write!(f, "PGR:{}", result.join("|"))
+    }
+}
+
 /// Pin List Record
-#[derive(Debug, IntoPyObject)]
+#[derive(Debug, IntoPyObject, Clone)]
 #[allow(dead_code)]
 #[allow(non_snake_case)]
 pub struct PLR {
@@ -1074,8 +1414,27 @@ impl From<&RawRecord> for PLR {
     }
 }
 
+impl fmt::Display for PLR {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        let grp_indx_str = self.grp_indx.iter().map(|x| x.to_string()).collect::<Vec<_>>().join(",");
+        let grp_mode_str = self.grp_mode.iter().map(|x| x.to_string()).collect::<Vec<_>>().join(",");
+        let grp_radx_str = self.grp_radx.iter().map(|x| x.to_string()).collect::<Vec<_>>().join(",");
+        let pgm_char_str = self.pgm_char.join(",");
+        let rtn_char_str = self.rtn_char.join(",");
+        let pgm_chal_str = self.pgm_chal.join(",");
+        let rtn_chal_str = self.rtn_chal.join(",");
+        let mut result = Vec::new();
+        result.push(grp_indx_str);
+        result.push(grp_mode_str);
+        result.push(grp_radx_str);
+        result.push(format!("{}, {}",pgm_chal_str, pgm_char_str));
+        result.push(format!("{}, {}",rtn_chal_str, rtn_char_str));
+        write!(f, "PLR:{}", result.join("|"))
+    }
+}
+
 /// Retest Data Record
-#[derive(Debug, IntoPyObject)]
+#[derive(Debug, IntoPyObject, Clone)]
 #[allow(dead_code)]
 #[allow(non_snake_case)]
 pub struct RDR {
@@ -1097,8 +1456,15 @@ impl From<&RawRecord> for RDR {
     }
 }
 
+impl fmt::Display for RDR {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        let rtst_bin_str = self.rtst_bin.iter().map(|x| x.to_string()).collect::<Vec<_>>().join(",");
+        write!(f, "RDR:{}|{}", self.num_bins, rtst_bin_str)
+    }
+}
+
 /// Wafer Configuration Record
-#[derive(Debug, IntoPyObject)]
+#[derive(Debug, IntoPyObject, Clone)]
 #[allow(dead_code)]
 #[allow(non_snake_case)]
 pub struct WCR {
@@ -1141,8 +1507,24 @@ impl From<&RawRecord> for WCR {
     }
 }
 
+impl fmt::Display for WCR {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        let mut result = Vec::new();
+        result.push(self.wf_flat.to_string());
+        result.push(self.pos_x.to_string());
+        result.push(self.pos_y.to_string());
+        result.push(self.wafr_siz.to_string());
+        result.push(self.die_ht.to_string());
+        result.push(self.die_wid.to_string());
+        result.push(self.wf_units.to_string());
+        result.push(self.center_x.to_string());
+        result.push(self.center_y.to_string());
+        write!(f, "WCR:{}", result.join("|"))
+    }
+}
+
 /// Begin Program Section Record
-#[derive(Debug, IntoPyObject)]
+#[derive(Debug, IntoPyObject, Clone)]
 #[allow(dead_code)]
 #[allow(non_snake_case)]
 pub struct BPS {
@@ -1161,6 +1543,12 @@ impl From<&RawRecord> for BPS {
     }
 }
 
+impl fmt::Display for BPS {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        write!(f, "BPS:{}", self.seq_name)
+    }
+}
+
 /// Begin Program Section Record
 /// Does not contain any data
 /// Location: Following the corresponding BPS and before PRR in the data stream.
@@ -1174,7 +1562,7 @@ impl From<&RawRecord> for BPS {
 ///     EPS (end of sequence-1)
 /// Because an EPS record does not contain the name of the sequencer, it should be
 /// assumed that each EPS record matches the last unmatched BPS record.
-#[derive(Debug)]
+#[derive(Debug, Clone)]
 #[allow(dead_code)]
 pub struct EPS;
 impl From<&RawRecord> for EPS {
@@ -1183,8 +1571,14 @@ impl From<&RawRecord> for EPS {
     }
 }
 
+impl fmt::Display for EPS {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        write!(f, "EPS:")
+    }
+}
+
 /// Generic Data Record
-#[derive(Debug)]
+#[derive(Debug, Clone)]
 #[allow(dead_code)]
 #[allow(non_snake_case)]
 pub struct GDR {
@@ -1206,8 +1600,15 @@ impl From<&RawRecord> for GDR {
     }
 }
 
+impl fmt::Display for GDR {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        let gen_data_str = self.gen_data.iter().map(|x| x.to_string()).collect::<Vec<_>>().join(",");
+        write!(f, "GDR:{}|{}", self.fld_cnt, gen_data_str)
+    }
+}
+
 /// Datalog Text Record
-#[derive(Debug, IntoPyObject)]
+#[derive(Debug, IntoPyObject, Clone)]
 #[allow(dead_code)]
 #[allow(non_snake_case)]
 pub struct DTR {
@@ -1226,13 +1627,19 @@ impl From<&RawRecord> for DTR {
     }
 }
 
+impl fmt::Display for DTR {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        write!(f, "DTR:{}", self.text_dat)
+    }
+}
 
-#[derive(Debug)]
+
+#[derive(Debug, Clone)]
 #[allow(dead_code)]
 pub struct NotImplementedRecord {}
 
 /// An enum of all the concrete record types
-#[derive(Debug)]
+#[derive(Debug, Clone)]
 pub enum Record {
     FAR(FAR),
     ATR(ATR),
