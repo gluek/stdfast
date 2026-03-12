@@ -1668,3 +1668,18 @@ pub enum Record {
     DTR(DTR),
     InvalidRecord(NotImplementedRecord),
 }
+
+impl fmt::Display for Record {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        macro_rules! display {
+            ($($variant:ident),*) => {
+                match self {
+                    $(Record::$variant(r) => write!(f, "{}", r),)*
+                    Record::InvalidRecord(_) => write!(f, ""),
+                }
+            };
+        }
+        display!(FAR, ATR, MIR, MRR, PCR, HBR, SBR, PMR, PGR, PLR, RDR,
+                 SDR, WIR, WRR, WCR, PIR, PRR, TSR, PTR, MPR, FTR, BPS, EPS, GDR, DTR)
+    }
+}

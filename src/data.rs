@@ -661,7 +661,6 @@ impl STDF {
                 record_collection.push(resolved.clone());
                 match resolved {
                     Record::MIR(mir) => {
-                        println!("{mir}");
                         opt_mir = Some(mir);
                     }
                     Record::MRR(mrr) => {
@@ -816,5 +815,24 @@ impl STDF {
         columns.push(Column::new("site_num".into(), site_nums));
 
         DataFrame::new(columns).unwrap()
+    }
+
+    /// Convert STDF to ATDF
+    pub fn to_atdf(&self) {
+        ();
+    }
+}
+
+pub struct ATDF;
+
+impl ATDF {
+    pub fn from_fname_to_atdf(fname: &str) -> std::io::Result<()> {
+        let records = Records::new(&fname)?;
+        for record in records {
+            if let Some(resolved) = record.resolve() {
+                println!("{resolved}");
+            }
+        }
+        Ok(())
     }
 }

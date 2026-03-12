@@ -2,11 +2,15 @@ use clap::Parser;
 use std::env;
 
 use polars::frame::DataFrame;
-use stdfast::{data::STDF, test_information::FullTestInformation};
+use stdfast::{data::{ATDF, STDF}, test_information::FullTestInformation};
 
 #[derive(Parser)]
 #[command(version, about, long_about = None)]
 struct Cli {
+    // print record information in ATDF format
+    #[arg(short, long)]
+    atdf: bool,
+
     // print record information during construction
     #[arg(short, long)]
     verbose: bool,
@@ -32,11 +36,17 @@ fn polars_config() {
 fn main() -> Result<(), Box<dyn std::error::Error>> {
     let cli = Cli::parse();
     let fname = cli.fname;
+    let atdf = cli.atdf;
     let verbose = cli.verbose;
     let verbose_df = cli.df;
     let summarize = cli.summarize;
 
     polars_config();
+
+    if atdf {
+        let _ = ATDF::from_fname_to_atdf(&fname);
+        return Ok(());
+    }
 
     if let Ok(stdf) = STDF::from_fname(&fname, verbose) {
         if verbose {
