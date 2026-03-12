@@ -1,8 +1,8 @@
 use crate::records::RecordSummary;
 use crate::records::Records;
-use crate::records::records::PTR;
-use crate::records::records::Record;
-use crate::records::records::TSR;
+use crate::records::record_impl::PTR;
+use crate::records::record_impl::Record;
+use crate::records::record_impl::TSR;
 use polars::frame::DataFrame;
 use polars::prelude::Column;
 use pyo3::Bound;

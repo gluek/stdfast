@@ -12,7 +12,7 @@ use std::collections::HashMap;
 
 use crate::{
     data::{MasterInformation, Row, STDF, TestData, WaferInformation},
-    records::records::*,
+    records::record_impl::*,
     test_information::TestInformation,
 };
 use pyo3::prelude::*;

@@ -8,9 +8,8 @@ use polars::prelude::*;
 use pyo3::IntoPyObject;
 use serde::Serialize;
 
-use crate::records::{Records, records::*};
+use crate::records::{Records, record_impl::*};
 use crate::{
-    records::records::{FTR, PIR, PRR, PTR, Record},
     test_information::{FullMergedTestInformation, FullTestInformation, TestType},
 };
 

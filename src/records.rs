@@ -1,4 +1,4 @@
-use crate::records::records::*;
+use crate::records::record_impl::*;
 use std::{
     collections::HashMap,
     fs::File,
@@ -6,7 +6,7 @@ use std::{
 };
 
 use crate::record_types::RecordType;
-pub mod records;
+pub mod record_impl;
 
 /// A header for an STDF record
 ///
