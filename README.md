@@ -1,7 +1,7 @@
-# stupidf
+# stdfast
 
 
-`stupidf` is a library for limited parsing of STDF files. The `STDF` structure can be used
+`stdfast` is a library for limited parsing of STDF files. The `STDF` structure can be used
 directly in rust, or alternatively sent out to Python using the `parse_stdf` function.
 
 STDF is the [Standard Test Data Format](https://en.wikipedia.org/wiki/Standard_Test_Data_Format) and is commonly used for high-volume test of semiconductors in Automated Test Equipment (ATE) systems. 
@@ -15,7 +15,7 @@ Not all record types are implemented because they're not relevant for my purpose
 In rust
 
 ```
-use stupidf::data::STDF;
+use stdfast::data::STDF;
 use polars::prelude::*;
 
 let verbose = false;
@@ -30,7 +30,7 @@ if let Ok(stdf) = STDF::from_fname(&fname, verbose) {
 Also contains Python bindings to this functionality, e.g.
 
 ```
-   import stupidf as sf
+   import stdfast as sf
    stdf = sf.parse_stdf("my_stdf.stdf")
    stdf['df']
 ````
@@ -39,23 +39,23 @@ Also contains Python bindings to this functionality, e.g.
 
 To install the rust CLI binary:
 
-```cargo install stupidf```
+```cargo install stdfast```
 
-To add the `stupidf` library to a rust project, add to the `Cargol.toml`:
+To add the `stdfast` library to a rust project, add to the `Cargol.toml`:
 
 ```
 [dependencies]
 <... snip ...>
-stupidf = "0.1.0"
+stdfast = "0.1.0"
 ```
 
 or execute from the command line in your rust project
 
-```cargo add stupidf```
+```cargo add stdfast```
 
 To install the Python bindings and pre-built wheel (linux and win currently):
 
-```pip install stupidf```
+```pip install stdfast```
 
 ## Building from source
 

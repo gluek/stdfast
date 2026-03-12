@@ -93,7 +93,7 @@ impl PySTDF {
 ///
 /// # Example
 /// ```
-///    import stupidf as sf
+///    import stdfast as sf
 ///    stdf = sf.parse_stdf("my_stdf.stdf")
 ///    stdf['df']
 /// ````
@@ -165,7 +165,7 @@ fn get_mir(fname: &str) -> PyResult<MIR> {
 }
 
 #[pymodule]
-fn stupidf(m: &Bound<'_, PyModule>) -> PyResult<()> {
+fn stdfast(m: &Bound<'_, PyModule>) -> PyResult<()> {
     m.add_function(wrap_pyfunction!(get_mir, m)?)?;
     m.add_function(wrap_pyfunction!(parse_stdf, m)?)?;
     m.add_function(wrap_pyfunction!(get_rows, m)?)?;
