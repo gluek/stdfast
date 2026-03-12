@@ -51,6 +51,13 @@ pub fn R4(bytes: &[u8], offset: &mut usize) -> f32 {
     x
 }
 
+/// Parse a 64-bit float and advance the `offset`
+pub fn R8(bytes: &[u8], offset: &mut usize) -> f64 {
+    let x = f64::from_le_bytes(bytes[*offset..*offset + 8].try_into().unwrap());
+    *offset += 8;
+    x
+}
+
 /// Parse a single 8-bit character and advance the `offset`
 pub fn C1(bytes: &[u8], offset: &mut usize) -> char {
     let x = char::from_u32(bytes[*offset] as u32)
@@ -141,6 +148,48 @@ pub fn kxCn(bytes: &[u8], num: usize, offset: &mut usize) -> Vec<String> {
             v.push(s);
         } else {
             panic!("Failed to parse kxCn from {offset} with num {num} and length {length} from\n{bytes:#?}");
+        }
+    }
+    v
+}
+
+#[derive(Debug)]
+pub enum GenData {
+    U1(u8),
+    U2(u16),
+    U4(u32),
+    I1(i8),
+    I2(i16),
+    I4(i32),
+    R4(f32),
+    R8(f64),
+    Cn(String),
+    Bn(Vec<u8>),
+    Dn(Vec<u8>),
+    N1(u8)
+}
+
+
+/// Parse an array of GenData and advance the offset
+pub fn Vn(bytes: &[u8], num: usize, offset: &mut usize) -> Vec<GenData> {
+    let mut v = Vec::with_capacity(num);
+    for _ in 0..num {
+        let dtype_code = bytes[*offset] as u8;
+        match dtype_code {
+            0 => *offset += 1,
+            1 => v.push(GenData::U1(U1(bytes, offset))),
+            2 => v.push(GenData::U2(U2(bytes, offset))),
+            3 => v.push(GenData::U4(U4(bytes, offset))),
+            4 => v.push(GenData::I1(I1(bytes, offset))),
+            5 => v.push(GenData::I2(I2(bytes, offset))),
+            6 => v.push(GenData::I4(I4(bytes, offset))),
+            7 => v.push(GenData::R4(R4(bytes, offset))),
+            8 => v.push(GenData::R8(R8(bytes, offset))),
+            10 => v.push(GenData::Cn(Cn(bytes, offset))),
+            11 => v.push(GenData::Bn(Bn(bytes, offset))),
+            12 => v.push(GenData::Dn(Dn(bytes, offset))),
+            13 => (),
+            _ => (),
         }
     }
     v

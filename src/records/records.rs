@@ -1178,42 +1178,29 @@ impl From<&RawRecord> for BPS {
 #[allow(dead_code)]
 pub struct EPS;
 
-#[derive(Debug)]
-pub enum GenData {
-    U1(u16),
-    U2(u16),
-    U4(u32),
-    I1(i8),
-    I2(i16),
-    I4(i32),
-    R4(f32),
-    R8(f64),
-    Cn(String),
-    Bn(Vec<u8>),
-    Dn(Vec<u8>),
-    N1(u8)
-}
 
 /// Generic Data Record
-// #[derive(Debug, IntoPyObject)]
-// #[allow(dead_code)]
-// #[allow(non_snake_case)]
-// pub struct GDR {
-//     pub fld_cnt: u16,
-//     gen_data: Vec<GenData>,
-// }
+#[derive(Debug)]
+#[allow(dead_code)]
+#[allow(non_snake_case)]
+pub struct GDR {
+    pub fld_cnt: u16,
+    pub gen_data: Vec<GenData>,
+}
 
-// impl From<&RawRecord> for GDR {
-//     fn from(record: &RawRecord) -> Self {
-//         let contents = &record.contents;
-//         let mut offset: usize = 0;
-//         let seq_name = Cn(contents, &mut offset);
+impl From<&RawRecord> for GDR {
+    fn from(record: &RawRecord) -> Self {
+        let contents = &record.contents;
+        let mut offset: usize = 0;
+        let fld_cnt = U2(contents, &mut offset);
+        let gen_data = Vn(contents, fld_cnt.into(), &mut offset);
 
-//         Self {
-//             seq_name,
-//         }
-//     }
-// }
+        Self {
+            fld_cnt,
+            gen_data,
+        }
+    }
+}
 
 /// Datalog Text Record
 #[derive(Debug, IntoPyObject)]
@@ -1266,7 +1253,7 @@ pub enum Record {
     FTR(FTR),
     BPS(BPS),
     EPS(EPS),
-    GDR(NotImplementedRecord),
+    GDR(GDR),
     DTR(DTR),
     InvalidRecord(NotImplementedRecord),
 }
