@@ -1177,7 +1177,11 @@ impl From<&RawRecord> for BPS {
 #[derive(Debug)]
 #[allow(dead_code)]
 pub struct EPS;
-
+impl From<&RawRecord> for EPS {
+    fn from(_record: &RawRecord) -> Self {
+        Self
+    }
+}
 
 /// Generic Data Record
 #[derive(Debug)]
