@@ -1578,7 +1578,7 @@ impl fmt::Display for EPS {
 }
 
 /// Generic Data Record
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, IntoPyObject)]
 #[allow(dead_code)]
 #[allow(non_snake_case)]
 pub struct GDR {

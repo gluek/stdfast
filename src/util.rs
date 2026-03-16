@@ -1,8 +1,8 @@
 //! utility functions for parsing STDF data types
-
 #![allow(non_snake_case)]
 
 use std::fmt;
+use pyo3::IntoPyObject;
 
 /// Parse a uint8 and advance the `offset`
 pub fn U1(bytes: &[u8], offset: &mut usize) -> u8 {
@@ -155,7 +155,7 @@ pub fn kxCn(bytes: &[u8], num: usize, offset: &mut usize) -> Vec<String> {
     v
 }
 
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, IntoPyObject)]
 pub enum GenData {
     U1(u8),
     U2(u16),

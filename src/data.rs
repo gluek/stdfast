@@ -650,7 +650,7 @@ impl STDF {
         let mut soft_bins = HashMap::new();
         let mut hard_bins = HashMap::new();
         let mut pins = HashMap::new();
-        let mut record_collection: Vec<Record> = Vec::new();
+        //let mut record_collection: Vec<Record> = Vec::new();
         let records = Records::new(&fname)?;
 
         let mut opt_mir: Option<MIR> = None;
@@ -658,7 +658,7 @@ impl STDF {
         let mut opt_sdr: Option<SDR> = None;
         for record in records {
             if let Some(resolved) = record.resolve() {
-                record_collection.push(resolved.clone());
+                //record_collection.push(resolved.clone());
                 match resolved {
                     Record::MIR(mir) => {
                         opt_mir = Some(mir);
