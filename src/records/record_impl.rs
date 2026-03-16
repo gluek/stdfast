@@ -474,6 +474,53 @@ impl fmt::Display for SDR {
     }
 }
 
+impl SDR {
+    pub fn bytes(&self) -> Vec<u8> {
+        let mut rec_len: i16 = 3 + self.site_cnt as i16;
+        let rec_typ_sub: &[u8] = &[1u8, 80u8];
+        let hand_typ_bytes = CnToBytes(self.hand_typ.clone(), &mut rec_len);
+        let hand_id_bytes = CnToBytes(self.hand_id.clone(), &mut rec_len);
+        let card_typ_bytes = CnToBytes(self.card_typ.clone(), &mut rec_len);
+        let card_id_bytes = CnToBytes(self.card_id.clone(), &mut rec_len);
+        let load_typ_bytes = CnToBytes(self.load_typ.clone(), &mut rec_len);
+        let load_id_bytes = CnToBytes(self.load_id.clone(), &mut rec_len);
+        let dib_typ_bytes = CnToBytes(self.dib_typ.clone(), &mut rec_len);
+        let dib_id_bytes = CnToBytes(self.dib_id.clone(), &mut rec_len);
+        let cabl_typ_bytes = CnToBytes(self.cabl_typ.clone(), &mut rec_len);
+        let cabl_id_bytes = CnToBytes(self.cabl_id.clone(), &mut rec_len);
+        let cont_typ_bytes = CnToBytes(self.cont_typ.clone(), &mut rec_len);
+        let cont_id_bytes = CnToBytes(self.cont_id.clone(), &mut rec_len);
+        let lasr_typ_bytes = CnToBytes(self.lasr_typ.clone(), &mut rec_len);
+        let lasr_id_bytes = CnToBytes(self.lasr_id.clone(), &mut rec_len);
+        let extr_typ_bytes = CnToBytes(self.extr_typ.clone(), &mut rec_len);
+        let extr_i_bytes = CnToBytes(self.extr_i.clone(), &mut rec_len);
+        [
+            &rec_len.to_ne_bytes(),
+            rec_typ_sub,
+            &self.head_num.to_ne_bytes(),
+            &self.site_grp.to_ne_bytes(),
+            &self.site_cnt.to_ne_bytes(),
+            &self.site_num,
+            &hand_typ_bytes,
+            &hand_id_bytes,
+            &card_typ_bytes,
+            &card_id_bytes,
+            &load_typ_bytes,
+            &load_id_bytes,
+            &dib_typ_bytes,
+            &dib_id_bytes,
+            &cabl_typ_bytes,
+            &cabl_id_bytes,
+            &cont_typ_bytes,
+            &cont_id_bytes,
+            &lasr_typ_bytes,
+            &lasr_id_bytes,
+            &extr_typ_bytes,
+            &extr_i_bytes,
+        ].concat()
+    }
+}
+
 /// Test Synopsis Record
 #[derive(Debug, IntoPyObject, Clone)]
 #[allow(dead_code)]
@@ -561,6 +608,36 @@ impl fmt::Display for TSR {
     }
 }
 
+impl TSR {
+    pub fn bytes(&self) -> Vec<u8> {
+        let mut rec_len: i16 = 40;
+        let rec_typ_sub: &[u8] = &[10u8, 30u8];
+        let test_nam_bytes = CnToBytes(self.test_nam.clone(), &mut rec_len);
+        let seq_name_bytes = CnToBytes(self.seq_name.clone(), &mut rec_len);
+        let test_lbl_bytes = CnToBytes(self.test_lbl.clone(), &mut rec_len);
+        [
+            &rec_len.to_ne_bytes(),
+            rec_typ_sub,
+            &self.head_num.to_ne_bytes(),
+            &self.site_num.to_ne_bytes(),
+            &[self.test_typ as u8],
+            &self.test_num.to_ne_bytes(),
+            &self.exec_cnt.to_ne_bytes(),
+            &self.fail_cnt.to_ne_bytes(),
+            &self.alrm_cnt.to_ne_bytes(),
+            &test_nam_bytes,
+            &seq_name_bytes,
+            &test_lbl_bytes,
+            &self.opt_flag.to_ne_bytes(),
+            &self.test_tim.to_ne_bytes(),
+            &self.test_min.to_ne_bytes(),
+            &self.test_max.to_ne_bytes(),
+            &self.tst_sums.to_ne_bytes(),
+            &self.tst_sqrs.to_ne_bytes(),
+        ].concat()
+    }
+}
+
 /// Software Bin Record
 #[derive(Debug, Clone, IntoPyObject)]
 #[allow(dead_code)]
@@ -609,6 +686,24 @@ impl fmt::Display for SBR {
     }
 }
 
+impl SBR {
+    pub fn bytes(&self) -> Vec<u8> {
+        let mut rec_len: i16 = 9;
+        let rec_typ_sub: &[u8] = &[1u8, 50u8];
+        let sbin_nam_bytes = CnToBytes(self.sbin_nam.clone(), &mut rec_len);
+        [
+            &rec_len.to_ne_bytes(),
+            rec_typ_sub,
+            &self.head_num.to_ne_bytes(),
+            &self.site_num.to_ne_bytes(),
+            &self.sbin_num.to_ne_bytes(),
+            &self.sbin_cnt.to_ne_bytes(),
+            &[self.sbin_pf as u8],
+            &sbin_nam_bytes,
+        ].concat()
+    }
+}
+
 /// Wafer Information Record
 #[derive(Debug, Clone, IntoPyObject)]
 #[allow(dead_code)]
@@ -646,6 +741,22 @@ impl fmt::Display for WIR {
         result.push(self.site_grp.to_string());
         result.push(self.wafer_id.to_string());
         write!(f, "WIR:{}", result.join("|"))
+    }
+}
+
+impl WIR {
+    pub fn bytes(&self) -> Vec<u8> {
+        let mut rec_len: i16 = 6;
+        let rec_typ_sub: &[u8] = &[2u8, 10u8];
+        let wafer_id_bytes = CnToBytes(self.wafer_id.clone(), &mut rec_len);
+        [
+            &rec_len.to_ne_bytes(),
+            rec_typ_sub,
+            &self.head_num.to_ne_bytes(),
+            &self.site_grp.to_ne_bytes(),
+            &self.start_t.to_ne_bytes(),
+            &wafer_id_bytes,
+        ].concat()
     }
 }
 
@@ -729,6 +840,37 @@ impl fmt::Display for WRR {
     }
 }
 
+impl WRR {
+    pub fn bytes(&self) -> Vec<u8> {
+        let mut rec_len: i16 = 26;
+        let rec_typ_sub: &[u8] = &[2u8, 20u8];
+        let wafer_id_bytes = CnToBytes(self.wafer_id.clone(), &mut rec_len);
+        let fabwf_id_bytes = CnToBytes(self.fabwf_id.clone(), &mut rec_len);
+        let frame_id_bytes = CnToBytes(self.frame_id.clone(), &mut rec_len);
+        let mask_id_bytes = CnToBytes(self.mask_id.clone(), &mut rec_len);
+        let usr_desc_bytes = CnToBytes(self.usr_desc.clone(), &mut rec_len);
+        let exc_desc_bytes = CnToBytes(self.exc_desc.clone(), &mut rec_len);
+        [
+            &rec_len.to_ne_bytes(),
+            rec_typ_sub,
+            &self.head_num.to_ne_bytes(),
+            &self.site_grp.to_ne_bytes(),
+            &self.finish_t.to_ne_bytes(),
+            &self.part_cnt.to_ne_bytes(),
+            &self.rtst_cnt.to_ne_bytes(),
+            &self.abrt_cnt.to_ne_bytes(),
+            &self.good_cnt.to_ne_bytes(),
+            &self.func_cnt.to_ne_bytes(),
+            &wafer_id_bytes,
+            &fabwf_id_bytes,
+            &frame_id_bytes,
+            &mask_id_bytes,
+            &usr_desc_bytes,
+            &exc_desc_bytes,
+        ].concat()
+    }
+}
+
 /// Hardware Bin Record
 #[derive(Debug, Clone, IntoPyObject)]
 #[allow(dead_code)]
@@ -774,6 +916,24 @@ impl fmt::Display for HBR {
         result.push(self.hbin_pf.to_string());
         result.push(self.hbin_nam.to_string());
         write!(f, "HBR:{}", result.join("|"))
+    }
+}
+
+impl HBR {
+    pub fn bytes(&self) -> Vec<u8> {
+        let mut rec_len: i16 = 9;
+        let rec_typ_sub: &[u8] = &[1u8, 40u8];
+        let hbin_nam_bytes = CnToBytes(self.hbin_nam.clone(), &mut rec_len);
+        [
+            &rec_len.to_ne_bytes(),
+            rec_typ_sub,
+            &self.head_num.to_ne_bytes(),
+            &self.site_num.to_ne_bytes(),
+            &self.hbin_num.to_ne_bytes(),
+            &self.hbin_cnt.to_ne_bytes(),
+            &[self.hbin_pf as u8],
+            &hbin_nam_bytes,
+        ].concat()
     }
 }
 
@@ -829,6 +989,24 @@ impl fmt::Display for PCR {
     }
 }
 
+impl PCR {
+    pub fn bytes(&self) -> Vec<u8> {
+        let rec_len: i16 = 22;
+        let rec_typ_sub: &[u8] = &[1u8, 30u8];
+        [
+            &rec_len.to_ne_bytes(),
+            rec_typ_sub,
+            &self.head_num.to_ne_bytes(),
+            &self.site_num.to_ne_bytes(),
+            &self.part_cnt.to_ne_bytes(),
+            &self.rtst_cnt.to_ne_bytes(),
+            &self.abrt_cnt.to_ne_bytes(),
+            &self.good_cnt.to_ne_bytes(),
+            &self.func_cnt.to_ne_bytes(),
+        ].concat()
+    }
+}
+
 /// Part Information Record
 #[derive(Debug, IntoPyObject, Clone)]
 #[allow(dead_code)]
@@ -851,6 +1029,19 @@ impl From<&RawRecord> for PIR {
 impl fmt::Display for PIR {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         write!(f, "PIR:{}|{}", self.head_num, self.site_num)
+    }
+}
+
+impl PIR {
+    pub fn bytes(&self) -> Vec<u8> {
+        let rec_len: i16 = 2;
+        let rec_typ_sub: &[u8] = &[5u8, 10u8];
+        [
+            &rec_len.to_ne_bytes(),
+            rec_typ_sub,
+            &self.head_num.to_ne_bytes(),
+            &self.site_num.to_ne_bytes(),
+        ].concat()
     }
 }
 
@@ -927,6 +1118,34 @@ impl fmt::Display for PRR {
     }
 }
 
+impl PRR {
+    pub fn bytes(&self) -> Vec<u8> {
+        let mut rec_len: i16 = 17;
+        let rec_typ_sub: &[u8] = &[5u8, 20u8];
+        let part_id_bytes = CnToBytes(self.part_id.clone(), &mut rec_len);
+        let part_txt_bytes = CnToBytes(self.part_txt.clone(), &mut rec_len);
+        rec_len += 1 + self.part_fix.len() as i16;
+        let mut part_fix_bytes = vec![self.part_fix.len() as u8];
+        part_fix_bytes.extend_from_slice(&self.part_fix);
+        [
+            &rec_len.to_ne_bytes(),
+            rec_typ_sub,
+            &self.head_num.to_ne_bytes(),
+            &self.site_num.to_ne_bytes(),
+            &self.part_flg.to_ne_bytes(),
+            &self.num_test.to_ne_bytes(),
+            &self.hard_bin.to_ne_bytes(),
+            &self.soft_bin.to_ne_bytes(),
+            &self.x_coord.to_ne_bytes(),
+            &self.y_coord.to_ne_bytes(),
+            &self.test_t.to_ne_bytes(),
+            &part_id_bytes,
+            &part_txt_bytes,
+            &part_fix_bytes,
+        ].concat()
+    }
+}
+
 /// Master Results Record
 #[derive(Debug, IntoPyObject, Clone)]
 #[allow(dead_code)]
@@ -964,6 +1183,23 @@ impl fmt::Display for MRR {
         result.push(self.usr_desc.to_string());
         result.push(self.exc_desc.to_string());
         write!(f, "MRR:{}", result.join("|"))
+    }
+}
+
+impl MRR {
+    pub fn bytes(&self) -> Vec<u8> {
+        let mut rec_len: i16 = 5;
+        let rec_typ_sub: &[u8] = &[1u8, 20u8];
+        let usr_desc_bytes = CnToBytes(self.usr_desc.clone(), &mut rec_len);
+        let exc_desc_bytes = CnToBytes(self.exc_desc.clone(), &mut rec_len);
+        [
+            &rec_len.to_ne_bytes(),
+            rec_typ_sub,
+            &self.finish_t.to_ne_bytes(),
+            &[self.disp_cod as u8],
+            &usr_desc_bytes,
+            &exc_desc_bytes,
+        ].concat()
     }
 }
 
@@ -1074,6 +1310,41 @@ impl From<&RawRecord> for PTR {
 impl PTR {
     pub fn pass(&self) -> bool {
         (self.test_flg >> 6) & 0b11 == 0
+    }
+
+    pub fn bytes(&self) -> Vec<u8> {
+        let mut rec_len: i16 = 32;
+        let rec_typ_sub: &[u8] = &[15u8, 10u8];
+        let test_txt_bytes = CnToBytes(self.test_txt.clone(), &mut rec_len);
+        let alarm_id_bytes = CnToBytes(self.alarm_id.clone(), &mut rec_len);
+        let units_bytes = CnToBytes(self.units.clone(), &mut rec_len);
+        let c_resfmt_bytes = CnToBytes(self.c_resfmt.clone(), &mut rec_len);
+        let c_llmfmt_bytes = CnToBytes(self.c_llmfmt.clone(), &mut rec_len);
+        let c_hlmfmt_bytes = CnToBytes(self.c_hlmfmt.clone(), &mut rec_len);
+        [
+            &rec_len.to_ne_bytes(),
+            rec_typ_sub,
+            &self.test_num.to_ne_bytes(),
+            &self.head_num.to_ne_bytes(),
+            &self.site_num.to_ne_bytes(),
+            &self.test_flg.to_ne_bytes(),
+            &self.parm_flg.to_ne_bytes(),
+            &self.result.to_ne_bytes(),
+            &test_txt_bytes,
+            &alarm_id_bytes,
+            &self.opt_flag.to_ne_bytes(),
+            &self.res_scal.to_ne_bytes(),
+            &self.llm_scal.to_ne_bytes(),
+            &self.hlm_scal.to_ne_bytes(),
+            &self.lo_limit.to_ne_bytes(),
+            &self.hi_limit.to_ne_bytes(),
+            &units_bytes,
+            &c_resfmt_bytes,
+            &c_llmfmt_bytes,
+            &c_hlmfmt_bytes,
+            &self.lo_spec.to_ne_bytes(),
+            &self.hi_spec.to_ne_bytes(),
+        ].concat()
     }
 }
 
@@ -1210,6 +1481,78 @@ impl FTR {
         let test_flg = self.test_flg;
         // don't bother checking the other flags
         test_flg & 0x80 == 0
+    }
+
+    pub fn bytes(&self) -> Vec<u8> {
+        let rtn_stat_nbytes = (self.rtn_icnt as usize).div_ceil(2) as i16;
+        let pgm_stat_nbytes = (self.pgm_icnt as usize).div_ceil(2) as i16;
+        let mut rec_len: i16 = 38
+            + self.rtn_icnt as i16 * 2 + rtn_stat_nbytes
+            + self.pgm_icnt as i16 * 2 + pgm_stat_nbytes
+            + 2 + self.fail_pin.len() as i16
+            + 1
+            + 2 + self.spin_map.len() as i16;
+        let rec_typ_sub: &[u8] = &[15u8, 20u8];
+
+        let rtn_indx_bytes: Vec<u8> = self.rtn_indx.iter().flat_map(|x| x.to_ne_bytes()).collect();
+        let rtn_stat_bytes: Vec<u8> = (0..rtn_stat_nbytes as usize).map(|i| {
+            let lo = if i * 2 < self.rtn_stat.len() { self.rtn_stat[i * 2] & 0xf } else { 0 };
+            let hi = if i * 2 + 1 < self.rtn_stat.len() { self.rtn_stat[i * 2 + 1] & 0xf } else { 0 };
+            lo | (hi << 4)
+        }).collect();
+        let pgm_indx_bytes: Vec<u8> = self.pgm_indx.iter().flat_map(|x| x.to_ne_bytes()).collect();
+        let pgm_stat_bytes: Vec<u8> = (0..pgm_stat_nbytes as usize).map(|i| {
+            let lo = if i * 2 < self.pgm_stat.len() { self.pgm_stat[i * 2] & 0xf } else { 0 };
+            let hi = if i * 2 + 1 < self.pgm_stat.len() { self.pgm_stat[i * 2 + 1] & 0xf } else { 0 };
+            lo | (hi << 4)
+        }).collect();
+        let fail_pin_nbits = (self.fail_pin.len() * 8) as u16;
+        let mut fail_pin_bytes = fail_pin_nbits.to_ne_bytes().to_vec();
+        fail_pin_bytes.extend_from_slice(&self.fail_pin);
+        let spin_map_nbits = (self.spin_map.len() * 8) as u16;
+        let mut spin_map_bytes = spin_map_nbits.to_ne_bytes().to_vec();
+        spin_map_bytes.extend_from_slice(&self.spin_map);
+
+        let vect_nam_bytes = CnToBytes(self.vect_nam.clone(), &mut rec_len);
+        let time_set_bytes = CnToBytes(self.time_set.clone(), &mut rec_len);
+        let op_code_bytes = CnToBytes(self.op_code.clone(), &mut rec_len);
+        let test_txt_bytes = CnToBytes(self.test_txt.clone(), &mut rec_len);
+        let alarm_id_bytes = CnToBytes(self.alarm_id.clone(), &mut rec_len);
+        let prog_txt_bytes = CnToBytes(self.prog_txt.clone(), &mut rec_len);
+        let rslt_txt_bytes = CnToBytes(self.rslt_txt.clone(), &mut rec_len);
+
+        [
+            &rec_len.to_ne_bytes(),
+            rec_typ_sub,
+            &self.test_num.to_ne_bytes(),
+            &self.head_num.to_ne_bytes(),
+            &self.site_num.to_ne_bytes(),
+            &self.test_flg.to_ne_bytes(),
+            &self.opt_flag.to_ne_bytes(),
+            &self.cycl_cnt.to_ne_bytes(),
+            &self.rel_vadr.to_ne_bytes(),
+            &self.rept_cnt.to_ne_bytes(),
+            &self.num_fail.to_ne_bytes(),
+            &self.xfail_ad.to_ne_bytes(),
+            &self.yfail_ad.to_ne_bytes(),
+            &self.vect_off.to_ne_bytes(),
+            &self.rtn_icnt.to_ne_bytes(),
+            &self.pgm_icnt.to_ne_bytes(),
+            &rtn_indx_bytes,
+            &rtn_stat_bytes,
+            &pgm_indx_bytes,
+            &pgm_stat_bytes,
+            &fail_pin_bytes,
+            &vect_nam_bytes,
+            &time_set_bytes,
+            &op_code_bytes,
+            &test_txt_bytes,
+            &alarm_id_bytes,
+            &prog_txt_bytes,
+            &rslt_txt_bytes,
+            &self.patg_num.to_ne_bytes(),
+            &spin_map_bytes,
+        ].concat()
     }
 }
 
@@ -1384,6 +1727,59 @@ impl fmt::Display for MPR {
     }
 }
 
+impl MPR {
+    pub fn bytes(&self) -> Vec<u8> {
+        let rtn_stat_nbytes = (self.rtn_icnt as usize).div_ceil(2) as i16;
+        let mut rec_len: i16 = 40 + rtn_stat_nbytes + self.rslt_cnt as i16 * 4 + self.rtn_icnt as i16 * 2;
+        let rec_typ_sub: &[u8] = &[15u8, 15u8];
+        let rtn_stat_bytes: Vec<u8> = (0..rtn_stat_nbytes as usize).map(|i| {
+            let lo = if i * 2 < self.rtn_stat.len() { self.rtn_stat[i * 2] & 0xf } else { 0 };
+            let hi = if i * 2 + 1 < self.rtn_stat.len() { self.rtn_stat[i * 2 + 1] & 0xf } else { 0 };
+            lo | (hi << 4)
+        }).collect();
+        let rtn_rslt_bytes: Vec<u8> = self.rtn_rslt.iter().flat_map(|x| x.to_ne_bytes()).collect();
+        let test_txt_bytes = CnToBytes(self.test_txt.clone(), &mut rec_len);
+        let alarm_id_bytes = CnToBytes(self.alarm_id.clone(), &mut rec_len);
+        let rtn_indx_bytes: Vec<u8> = self.rtn_indx.iter().flat_map(|x| x.to_ne_bytes()).collect();
+        let units_bytes = CnToBytes(self.units.clone(), &mut rec_len);
+        let units_in_bytes = CnToBytes(self.units_in.clone(), &mut rec_len);
+        let c_resfmt_bytes = CnToBytes(self.c_resfmt.clone(), &mut rec_len);
+        let c_llmfmt_bytes = CnToBytes(self.c_llmfmt.clone(), &mut rec_len);
+        let c_hlmfmt_bytes = CnToBytes(self.c_hlmfmt.clone(), &mut rec_len);
+        [
+            &rec_len.to_ne_bytes(),
+            rec_typ_sub,
+            &self.test_num.to_ne_bytes(),
+            &self.head_num.to_ne_bytes(),
+            &self.site_num.to_ne_bytes(),
+            &self.test_flg.to_ne_bytes(),
+            &self.parm_flg.to_ne_bytes(),
+            &self.rtn_icnt.to_ne_bytes(),
+            &self.rslt_cnt.to_ne_bytes(),
+            &rtn_stat_bytes,
+            &rtn_rslt_bytes,
+            &test_txt_bytes,
+            &alarm_id_bytes,
+            &self.opt_flag.to_ne_bytes(),
+            &self.res_scal.to_ne_bytes(),
+            &self.llm_scal.to_ne_bytes(),
+            &self.hlm_scal.to_ne_bytes(),
+            &self.lo_limit.to_ne_bytes(),
+            &self.hi_limit.to_ne_bytes(),
+            &self.start_in.to_ne_bytes(),
+            &self.incr_in.to_ne_bytes(),
+            &rtn_indx_bytes,
+            &units_bytes,
+            &units_in_bytes,
+            &c_resfmt_bytes,
+            &c_llmfmt_bytes,
+            &c_hlmfmt_bytes,
+            &self.lo_spec.to_ne_bytes(),
+            &self.hi_spec.to_ne_bytes(),
+        ].concat()
+    }
+}
+
 /// Pin Map Record
 #[derive(Debug, IntoPyObject, Clone)]
 #[allow(dead_code)]
@@ -1437,6 +1833,27 @@ impl fmt::Display for PMR {
     }
 }
 
+impl PMR {
+    pub fn bytes(&self) -> Vec<u8> {
+        let mut rec_len: i16 = 6;
+        let rec_typ_sub: &[u8] = &[1u8, 60u8];
+        let chan_nam_bytes = CnToBytes(self.chan_nam.clone(), &mut rec_len);
+        let phy_nam_bytes = CnToBytes(self.phy_nam.clone(), &mut rec_len);
+        let log_nam_bytes = CnToBytes(self.log_nam.clone(), &mut rec_len);
+        [
+            &rec_len.to_ne_bytes(),
+            rec_typ_sub,
+            &self.pmr_indx.to_ne_bytes(),
+            &self.chan_typ.to_ne_bytes(),
+            &chan_nam_bytes,
+            &phy_nam_bytes,
+            &log_nam_bytes,
+            &self.head_num.to_ne_bytes(),
+            &self.site_num.to_ne_bytes(),
+        ].concat()
+    }
+}
+
 /// Pin Group Record
 #[derive(Debug, IntoPyObject, Clone)]
 #[allow(dead_code)]
@@ -1476,6 +1893,23 @@ impl fmt::Display for PGR {
         result.push(self.indx_cnt.to_string());
         result.push(pmr_indx_str);
         write!(f, "PGR:{}", result.join("|"))
+    }
+}
+
+impl PGR {
+    pub fn bytes(&self) -> Vec<u8> {
+        let mut rec_len: i16 = 4 + self.indx_cnt as i16 * 2;
+        let rec_typ_sub: &[u8] = &[1u8, 62u8];
+        let grp_nam_bytes = CnToBytes(self.grp_nam.clone(), &mut rec_len);
+        let pmr_indx_bytes: Vec<u8> = self.pmr_indx.iter().flat_map(|x| x.to_ne_bytes()).collect();
+        [
+            &rec_len.to_ne_bytes(),
+            rec_typ_sub,
+            &self.grp_indx.to_ne_bytes(),
+            &grp_nam_bytes,
+            &self.indx_cnt.to_ne_bytes(),
+            &pmr_indx_bytes,
+        ].concat()
     }
 }
 
@@ -1540,6 +1974,36 @@ impl fmt::Display for PLR {
     }
 }
 
+impl PLR {
+    pub fn bytes(&self) -> Vec<u8> {
+        let grp_cnt = self.grp_cnt as i16;
+        let mut rec_len: i16 = 2 + grp_cnt * 5;
+        let rec_typ_sub: &[u8] = &[1u8, 63u8];
+        let grp_indx_bytes: Vec<u8> = self.grp_indx.iter().flat_map(|x| x.to_ne_bytes()).collect();
+        let grp_mode_bytes: Vec<u8> = self.grp_mode.iter().flat_map(|x| x.to_ne_bytes()).collect();
+        let pgm_char_bytes: Vec<u8> = self.pgm_char.iter().flat_map(|s| s.as_bytes().to_vec()).collect();
+        rec_len += pgm_char_bytes.len() as i16;
+        let rtn_char_bytes: Vec<u8> = self.rtn_char.iter().flat_map(|s| s.as_bytes().to_vec()).collect();
+        rec_len += rtn_char_bytes.len() as i16;
+        let pgm_chal_bytes: Vec<u8> = self.pgm_chal.iter().flat_map(|s| s.as_bytes().to_vec()).collect();
+        rec_len += pgm_chal_bytes.len() as i16;
+        let rtn_chal_bytes: Vec<u8> = self.rtn_chal.iter().flat_map(|s| s.as_bytes().to_vec()).collect();
+        rec_len += rtn_chal_bytes.len() as i16;
+        [
+            &rec_len.to_ne_bytes(),
+            rec_typ_sub,
+            &self.grp_cnt.to_ne_bytes(),
+            &grp_indx_bytes,
+            &grp_mode_bytes,
+            &self.grp_radx,
+            &pgm_char_bytes,
+            &rtn_char_bytes,
+            &pgm_chal_bytes,
+            &rtn_chal_bytes,
+        ].concat()
+    }
+}
+
 /// Retest Data Record
 #[derive(Debug, IntoPyObject, Clone)]
 #[allow(dead_code)]
@@ -1567,6 +2031,20 @@ impl fmt::Display for RDR {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         let rtst_bin_str = self.rtst_bin.iter().map(|x| x.to_string()).collect::<Vec<_>>().join(",");
         write!(f, "RDR:{}|{}", self.num_bins, rtst_bin_str)
+    }
+}
+
+impl RDR {
+    pub fn bytes(&self) -> Vec<u8> {
+        let rec_len: i16 = 2 + self.num_bins as i16 * 2;
+        let rec_typ_sub: &[u8] = &[1u8, 70u8];
+        let rtst_bin_bytes: Vec<u8> = self.rtst_bin.iter().flat_map(|x| x.to_ne_bytes()).collect();
+        [
+            &rec_len.to_ne_bytes(),
+            rec_typ_sub,
+            &self.num_bins.to_ne_bytes(),
+            &rtst_bin_bytes,
+        ].concat()
     }
 }
 
@@ -1630,6 +2108,26 @@ impl fmt::Display for WCR {
     }
 }
 
+impl WCR {
+    pub fn bytes(&self) -> Vec<u8> {
+        let rec_len: i16 = 20;
+        let rec_typ_sub: &[u8] = &[2u8, 30u8];
+        [
+            &rec_len.to_ne_bytes(),
+            rec_typ_sub,
+            &self.wafr_siz.to_ne_bytes(),
+            &self.die_ht.to_ne_bytes(),
+            &self.die_wid.to_ne_bytes(),
+            &self.wf_units.to_ne_bytes(),
+            &[self.wf_flat as u8],
+            &self.center_x.to_ne_bytes(),
+            &self.center_y.to_ne_bytes(),
+            &[self.pos_x as u8],
+            &[self.pos_y as u8],
+        ].concat()
+    }
+}
+
 /// Begin Program Section Record
 #[derive(Debug, IntoPyObject, Clone)]
 #[allow(dead_code)]
@@ -1653,6 +2151,19 @@ impl From<&RawRecord> for BPS {
 impl fmt::Display for BPS {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         write!(f, "BPS:{}", self.seq_name)
+    }
+}
+
+impl BPS {
+    pub fn bytes(&self) -> Vec<u8> {
+        let mut rec_len: i16 = 0;
+        let rec_typ_sub: &[u8] = &[20u8, 10u8];
+        let seq_name_bytes = CnToBytes(self.seq_name.clone(), &mut rec_len);
+        [
+            &rec_len.to_ne_bytes(),
+            rec_typ_sub,
+            &seq_name_bytes,
+        ].concat()
     }
 }
 
@@ -1681,6 +2192,17 @@ impl From<&RawRecord> for EPS {
 impl fmt::Display for EPS {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         write!(f, "EPS:")
+    }
+}
+
+impl EPS {
+    pub fn bytes(&self) -> Vec<u8> {
+        let rec_len: i16 = 0;
+        let rec_typ_sub: &[u8] = &[20u8, 20u8];
+        [
+            &rec_len.to_ne_bytes(),
+            rec_typ_sub,
+        ].concat()
     }
 }
 
@@ -1714,6 +2236,51 @@ impl fmt::Display for GDR {
     }
 }
 
+impl GDR {
+    pub fn bytes(&self) -> Vec<u8> {
+        let rec_typ_sub: &[u8] = &[50u8, 10u8];
+        let gen_data_bytes: Vec<u8> = self.gen_data.iter().flat_map(|d| {
+            let mut b: Vec<u8> = Vec::new();
+            match d {
+                GenData::U1(v) => { b.push(1);  b.extend_from_slice(&v.to_ne_bytes()); }
+                GenData::U2(v) => { b.push(2);  b.extend_from_slice(&v.to_ne_bytes()); }
+                GenData::U4(v) => { b.push(3);  b.extend_from_slice(&v.to_ne_bytes()); }
+                GenData::I1(v) => { b.push(4);  b.extend_from_slice(&v.to_ne_bytes()); }
+                GenData::I2(v) => { b.push(5);  b.extend_from_slice(&v.to_ne_bytes()); }
+                GenData::I4(v) => { b.push(6);  b.extend_from_slice(&v.to_ne_bytes()); }
+                GenData::R4(v) => { b.push(7);  b.extend_from_slice(&v.to_ne_bytes()); }
+                GenData::R8(v) => { b.push(8);  b.extend_from_slice(&v.to_ne_bytes()); }
+                GenData::Cn(v) => {
+                    b.push(10);
+                    let s = v.as_bytes();
+                    b.push(s.len() as u8);
+                    b.extend_from_slice(s);
+                }
+                GenData::Bn(v) => {
+                    b.push(11);
+                    b.push(v.len() as u8);
+                    b.extend_from_slice(v);
+                }
+                GenData::Dn(v) => {
+                    b.push(12);
+                    let nbits = (v.len() * 8) as u16;
+                    b.extend_from_slice(&nbits.to_ne_bytes());
+                    b.extend_from_slice(v);
+                }
+                GenData::N1(v) => { b.push(13); b.push(*v & 0xf); }
+            }
+            b
+        }).collect();
+        let rec_len: i16 = 2 + gen_data_bytes.len() as i16;
+        [
+            &rec_len.to_ne_bytes(),
+            rec_typ_sub,
+            &self.fld_cnt.to_ne_bytes(),
+            &gen_data_bytes,
+        ].concat()
+    }
+}
+
 /// Datalog Text Record
 #[derive(Debug, IntoPyObject, Clone)]
 #[allow(dead_code)]
@@ -1737,6 +2304,19 @@ impl From<&RawRecord> for DTR {
 impl fmt::Display for DTR {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         write!(f, "DTR:{}", self.text_dat)
+    }
+}
+
+impl DTR {
+    pub fn bytes(&self) -> Vec<u8> {
+        let mut rec_len: i16 = 0;
+        let rec_typ_sub: &[u8] = &[50u8, 30u8];
+        let text_dat_bytes = CnToBytes(self.text_dat.clone(), &mut rec_len);
+        [
+            &rec_len.to_ne_bytes(),
+            rec_typ_sub,
+            &text_dat_bytes,
+        ].concat()
     }
 }
 

@@ -99,7 +99,7 @@ pub fn Bn(bytes: &[u8], offset: &mut usize) -> Vec<u8> {
 pub fn Dn(bytes: &[u8], offset: &mut usize) -> Vec<u8> {
     let nbits = u16::from_le_bytes(bytes[*offset..*offset + 2].try_into().unwrap()) as usize;
     let length = nbits.div_ceil(8);
-    let dn = bytes[*offset + 1..*offset + 1 + length].to_vec();
+    let dn = bytes[*offset + 2..*offset + 2 + length].to_vec();
     *offset += 2 + length;
     dn
 }
@@ -202,8 +202,9 @@ pub fn Vn(bytes: &[u8], num: usize, offset: &mut usize) -> Vec<GenData> {
     let mut v = Vec::with_capacity(num);
     for _ in 0..num {
         let dtype_code = bytes[*offset] as u8;
+        *offset += 1;
         match dtype_code {
-            0 => *offset += 1,
+            0 => (),
             1 => v.push(GenData::U1(U1(bytes, offset))),
             2 => v.push(GenData::U2(U2(bytes, offset))),
             3 => v.push(GenData::U4(U4(bytes, offset))),
@@ -215,7 +216,7 @@ pub fn Vn(bytes: &[u8], num: usize, offset: &mut usize) -> Vec<GenData> {
             10 => v.push(GenData::Cn(Cn(bytes, offset))),
             11 => v.push(GenData::Bn(Bn(bytes, offset))),
             12 => v.push(GenData::Dn(Dn(bytes, offset))),
-            13 => (),
+            13 => v.push(GenData::N1(U1(bytes, offset) & 0xf)),
             _ => (),
         }
     }
