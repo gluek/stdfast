@@ -2370,3 +2370,18 @@ impl fmt::Display for Record {
                  SDR, WIR, WRR, WCR, PIR, PRR, TSR, PTR, MPR, FTR, BPS, EPS, GDR, DTR)
     }
 }
+
+impl Record {
+    pub fn bytes(&self) -> Vec<u8> {
+        macro_rules! dispatch {
+            ($($variant:ident),*) => {
+                match self {
+                    $(Record::$variant(r) => r.bytes(),)*
+                    Record::InvalidRecord(_) => vec![],
+                }
+            };
+        }
+        dispatch!(FAR, ATR, MIR, MRR, PCR, HBR, SBR, PMR, PGR, PLR, RDR,
+                  SDR, WIR, WRR, WCR, PIR, PRR, TSR, PTR, MPR, FTR, BPS, EPS, GDR, DTR)
+    }
+}
