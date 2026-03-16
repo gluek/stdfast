@@ -610,12 +610,14 @@ impl WaferInformation {
 /// ```
 #[derive(Debug, IntoPyObject)]
 pub struct STDF {
+    /// Vector of individual STDF records
+    pub record_collection: Vec<Record>,
     /// The STDF file metadata
     pub master_information: MasterInformation,
     ///// The STDF file metadata
     pub wafer_information: Vec<WaferInformation>,
     /// The site information
-    pub site_information: SDR,
+    pub site_information: Option<SDR>,
     /// Soft bin information indexed by soft bin number
     pub soft_bins: HashMap<u16, SBR>,
     /// Hard bin information indexed by hard bin number
@@ -650,7 +652,7 @@ impl STDF {
         let mut soft_bins = HashMap::new();
         let mut hard_bins = HashMap::new();
         let mut pins = HashMap::new();
-        //let mut record_collection: Vec<Record> = Vec::new();
+        let mut record_collection: Vec<Record> = Vec::new();
         let records = Records::new(&fname)?;
 
         let mut opt_mir: Option<MIR> = None;
@@ -658,7 +660,7 @@ impl STDF {
         let mut opt_sdr: Option<SDR> = None;
         for record in records {
             if let Some(resolved) = record.resolve() {
-                //record_collection.push(resolved.clone());
+                record_collection.push(resolved.clone());
                 match resolved {
                     Record::MIR(mir) => {
                         opt_mir = Some(mir);
@@ -706,14 +708,16 @@ impl STDF {
             }
         }
         test_data.normalize_multipin_results();
-        if let (Some(mir), Some(mrr), Some(site_information)) = (opt_mir, opt_mrr, opt_sdr) {
+        if let (Some(mir), Some(mrr)) = (opt_mir, opt_mrr) {
             let master_information = MasterInformation::new(mir, mrr);
             let wafer_information = wirs
                 .into_iter()
                 .zip(wrrs.into_iter())
                 .map(|(wir, wrr)| WaferInformation::new(wir, wrr))
                 .collect();
+            let site_information = opt_sdr;
             Ok(Self {
+                record_collection,
                 master_information,
                 wafer_information,
                 site_information,
@@ -818,8 +822,11 @@ impl STDF {
     }
 
     /// Convert STDF to ATDF
-    pub fn to_atdf(&self) {
-        ();
+    pub fn to_atdf(&self) -> std::io::Result<()> {
+        for record in &self.record_collection {
+            println!("{record}");
+        }
+        Ok(())
     }
 }
 

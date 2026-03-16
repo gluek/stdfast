@@ -26,7 +26,7 @@ struct PySTDF {
     /// WIR and WRR information
     wafers: Vec<WaferInformation>,
     /// The site information
-    site_information: SDR,
+    site_information: Option<SDR>,
     /// The soft-bin information
     soft_bins: PyDataFrame,
     /// The hard-bin information

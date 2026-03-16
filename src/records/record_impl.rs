@@ -2180,12 +2180,18 @@ impl BPS {
 ///     EPS (end of sequence-1)
 /// Because an EPS record does not contain the name of the sequencer, it should be
 /// assumed that each EPS record matches the last unmatched BPS record.
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, IntoPyObject)]
 #[allow(dead_code)]
-pub struct EPS;
+pub struct EPS {
+    dummy_field: String,
+}
+
 impl From<&RawRecord> for EPS {
     fn from(_record: &RawRecord) -> Self {
-        Self
+        let dummy_field = "".to_string();
+        Self {
+            dummy_field,
+        }
     }
 }
 
@@ -2326,7 +2332,7 @@ impl DTR {
 pub struct NotImplementedRecord {}
 
 /// An enum of all the concrete record types
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, IntoPyObject)]
 pub enum Record {
     FAR(FAR),
     ATR(ATR),
@@ -2353,7 +2359,6 @@ pub enum Record {
     EPS(EPS),
     GDR(GDR),
     DTR(DTR),
-    InvalidRecord(NotImplementedRecord),
 }
 
 impl fmt::Display for Record {
@@ -2362,7 +2367,6 @@ impl fmt::Display for Record {
             ($($variant:ident),*) => {
                 match self {
                     $(Record::$variant(r) => write!(f, "{}", r),)*
-                    Record::InvalidRecord(_) => write!(f, ""),
                 }
             };
         }
@@ -2377,7 +2381,6 @@ impl Record {
             ($($variant:ident),*) => {
                 match self {
                     $(Record::$variant(r) => r.bytes(),)*
-                    Record::InvalidRecord(_) => vec![],
                 }
             };
         }
