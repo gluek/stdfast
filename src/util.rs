@@ -80,6 +80,13 @@ pub fn Cn(bytes: &[u8], offset: &mut usize) -> String {
     }
 }
 
+/// Convert string to bytes and increase rec_len
+pub fn CnToBytes(content: String, rec_len: &mut i16) -> Vec<u8>{
+    let content_bytes = content.into_bytes();
+    *rec_len += i16::try_from(content_bytes.len()).unwrap();
+    content_bytes
+}
+
 /// Parse an array of bits and advance the `offset`
 pub fn Bn(bytes: &[u8], offset: &mut usize) -> Vec<u8> {
     let length = bytes[*offset] as usize;

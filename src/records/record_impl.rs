@@ -32,6 +32,19 @@ impl fmt::Display for FAR {
     }
 }
 
+impl FAR {
+    pub fn bytes(&self) -> Vec<u8> {
+        let rec_len: i16 = 2;
+        let rec_typ_sub: &[u8] = &[0u8, 10u8];
+        [
+            &rec_len.to_ne_bytes(),
+            rec_typ_sub,
+            &self.cpu_type.to_ne_bytes(),
+            &self.stdf_ver.to_ne_bytes()
+        ].concat()
+    }
+}
+
 /// Audit Trail Record
 #[derive(Debug, IntoPyObject, Clone)]
 #[allow(dead_code)]
@@ -57,6 +70,21 @@ impl From<&RawRecord> for ATR {
 impl fmt::Display for ATR {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         write!(f, "ATR:{}|{}", self.mod_tim, self.cmd_line)
+    }
+}
+
+impl ATR {
+    pub fn bytes(&self) -> Vec<u8> {
+        let mut rec_len: i16 = 4;
+        let rec_typ_sub: &[u8] = &[0u8, 20u8];
+
+        let cmd_line_bytes: Vec<u8> = CnToBytes(self.cmd_line.clone(), &mut rec_len);
+        [
+            &rec_len.to_ne_bytes(),
+            rec_typ_sub,
+            &self.mod_tim.to_ne_bytes(),
+            &cmd_line_bytes,
+        ].concat()
     }
 }
 
@@ -261,6 +289,85 @@ impl MIR {
             "Failed to find MIR in file",
         ))
     }
+
+    pub fn bytes(&self) -> Vec<u8> {
+        let mut rec_len: i16 = 15;
+        let rec_typ_sub: &[u8] = &[1u8, 10u8];
+
+        let lot_id_bytes = CnToBytes(self.lot_id.clone(), &mut rec_len);
+        let part_typ_bytes = CnToBytes(self.part_typ.clone(), &mut rec_len);
+        let node_nam_bytes = CnToBytes(self.node_nam.clone(), &mut rec_len);
+        let tstr_typ_bytes = CnToBytes(self.tstr_typ.clone(), &mut rec_len);
+        let job_nam_bytes = CnToBytes(self.job_nam.clone(), &mut rec_len);
+        let job_rev_bytes = CnToBytes(self.job_rev.clone(), &mut rec_len);
+        let sblot_id_bytes = CnToBytes(self.sblot_id.clone(), &mut rec_len);
+        let oper_nam_bytes = CnToBytes(self.oper_nam.clone(), &mut rec_len);
+        let exec_typ_bytes = CnToBytes(self.exec_typ.clone(), &mut rec_len);
+        let exec_ver_bytes = CnToBytes(self.exec_ver.clone(), &mut rec_len);
+        let test_cod_bytes = CnToBytes(self.test_cod.clone(), &mut rec_len);
+        let tst_temp_bytes = CnToBytes(self.tst_temp.clone(), &mut rec_len);
+        let user_txt_bytes = CnToBytes(self.user_txt.clone(), &mut rec_len);
+        let aux_file_bytes = CnToBytes(self.aux_file.clone(), &mut rec_len);
+        let pkg_typ_bytes = CnToBytes(self.pkg_typ.clone(), &mut rec_len);
+        let famly_id_bytes = CnToBytes(self.famly_id.clone(), &mut rec_len);
+        let date_cod_bytes = CnToBytes(self.date_cod.clone(), &mut rec_len);
+        let facil_id_bytes = CnToBytes(self.facil_id.clone(), &mut rec_len);
+        let floor_id_bytes = CnToBytes(self.floor_id.clone(), &mut rec_len);
+        let proc_id_bytes = CnToBytes(self.proc_id.clone(), &mut rec_len);
+        let oper_frq_bytes = CnToBytes(self.oper_frq.clone(), &mut rec_len);
+        let spec_nam_bytes = CnToBytes(self.spec_nam.clone(), &mut rec_len);
+        let spec_ver_bytes = CnToBytes(self.spec_ver.clone(), &mut rec_len);
+        let flow_id_bytes = CnToBytes(self.flow_id.clone(), &mut rec_len);
+        let setup_id_bytes = CnToBytes(self.setup_id.clone(), &mut rec_len);
+        let dsgn_rev_bytes = CnToBytes(self.dsgn_rev.clone(), &mut rec_len);
+        let eng_id_bytes = CnToBytes(self.eng_id.clone(), &mut rec_len);
+        let rom_cod_bytes = CnToBytes(self.rom_cod.clone(), &mut rec_len);
+        let serl_num_bytes = CnToBytes(self.serl_num.clone(), &mut rec_len);
+        let supr_nam_bytes = CnToBytes(self.supr_nam.clone(), &mut rec_len);
+
+        [
+            &rec_len.to_ne_bytes(),
+            rec_typ_sub,
+            &self.setup_t.to_ne_bytes(),
+            &self.start_t.to_ne_bytes(),
+            &self.stat_num.to_ne_bytes(),
+            &[self.mode_cod as u8],
+            &[self.rtst_cod as u8],
+            &[self.prot_cod as u8],
+            &self.burn_tim.to_ne_bytes(),
+            &[self.cmod_cod as u8],
+            &lot_id_bytes,
+            &part_typ_bytes,
+            &node_nam_bytes,
+            &tstr_typ_bytes,
+            &job_nam_bytes,
+            &job_rev_bytes,
+            &sblot_id_bytes,
+            &oper_nam_bytes,
+            &exec_typ_bytes,
+            &exec_ver_bytes,
+            &test_cod_bytes,
+            &tst_temp_bytes,
+            &user_txt_bytes,
+            &aux_file_bytes,
+            &pkg_typ_bytes,
+            &famly_id_bytes,
+            &date_cod_bytes,
+            &facil_id_bytes,
+            &floor_id_bytes,
+            &proc_id_bytes,
+            &oper_frq_bytes,
+            &spec_nam_bytes,
+            &spec_ver_bytes,
+            &flow_id_bytes,
+            &setup_id_bytes,
+            &dsgn_rev_bytes,
+            &eng_id_bytes,
+            &rom_cod_bytes,
+            &serl_num_bytes,
+            &supr_nam_bytes,
+        ].concat()
+}
 }
 
 /// Site Description Record
