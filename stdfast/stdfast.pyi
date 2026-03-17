@@ -25,11 +25,11 @@ def get_raw_stdf(fname):
        `test_data`: a `dict` describing all of the test results
 
     # Example
-    ```
+    ```python
        import stdfast as sf
        raw_stdf = sf.get_raw_stdf("my_stdf.stdf")
        raw_stdf['master_information']
-    ````
+    ```
     """
 
 def get_rows(fname):
@@ -46,11 +46,11 @@ def get_rows(fname):
     i.e. a proper list, not a generator.
 
     # Example
-    ```
+    ```python
        import stdfast as sf
        rows = sf.get_rows("my_stdf.stdf")
        rows[0]
-    ````
+    ```
     """
 
 def parse_stdf(fname):
@@ -63,15 +63,53 @@ def parse_stdf(fname):
     `fname` must be a `str` and may not be a `Path`-like object.
 
     Returns a dict with keys and values:
-       `mir`: `dict` describing the Master Infomation Record (file metadata)
-       `df`: `DataFrame` containing the test results
+       `master_information`: `dict` describing the Master Information Record and Master
+           Results Record (file metadata)
+       `site_description`: `dict` describing the Site Description Record, or `None`
+       `wafers`: `list` of `dict` describing the Wafer Information Records and Wafer
+           Results Records (wafer metadata)
+       `soft_bins`: `DataFrame` containing the soft-bin information
+       `hard_bins`: `DataFrame` containing the hard-bin information
+       `pins`: `DataFrame` containing the pin mapping information
+       `pin_mapping`: `dict` mapping test number to a list of pin indices
+       `data`: `DataFrame` containing the test results
        `test_information`: `DataFrame` containing the merged test information metadata
-       `full_test_information`: `dict` containing the full test information metadata
+       `full_test_information`: `dict` mapping `(test_num, site_num, head_num)` to
+           full test information metadata
 
     # Example
-    ```
+    ```python
        import stdfast as sf
        stdf = sf.parse_stdf("my_stdf.stdf")
        stdf['df']
-    ````
+    ```
+    """
+
+def write_stdf(fname, records):
+    """
+    write_stdf(fname: str, records: list)
+    --
+
+    Serialize a list of STDF record objects to a binary STDF file.
+
+    `fname` must be a `str` path to the output file (will be created or overwritten).
+    `records` is a list of record model instances from `stdfast.records` (e.g. `FAR`,
+    `MIR`, `PTR`, …).  Each object must have a `record_type` attribute matching the
+    class name.
+
+    # Example
+    ```python
+       from stdfast.records import FAR, MIR, MRR, PIR, PTR, PRR
+       import stdfast as sf
+
+       records = [
+           FAR(cpu_type=2, stdf_ver=4),
+           MIR(lot_id="LOT001", part_typ="MY_PART"),
+           PIR(head_num=1, site_num=1),
+           PTR(test_num=1000, head_num=1, site_num=1, result=3.14, test_txt="vdd"),
+           PRR(head_num=1, site_num=1, hard_bin=1, soft_bin=1, num_test=1),
+           MRR(),
+       ]
+       sf.write_stdf("out.stdf", records)
+    ```
     """
