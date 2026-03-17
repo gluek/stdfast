@@ -50,7 +50,7 @@ impl PySTDF {
     ///
     /// Analagous to `STDF::from_fname`
     fn from_fname(fname: &str) -> std::io::Result<Self> {
-        let stdf = STDF::from_fname(&fname, false)?;
+        let stdf = STDF::from_fname(&fname)?;
         let metadata = stdf.master_information.clone();
         let wafers = stdf.wafer_information.clone();
         let site_information = stdf.site_information.clone();
@@ -154,7 +154,7 @@ fn get_rows(fname: &str) -> PyResult<Vec<Row>> {
 /// ```
 #[pyfunction]
 fn get_raw_stdf(fname: &str) -> PyResult<STDF> {
-    let stdf = STDF::from_fname(fname, false)?;
+    let stdf = STDF::from_fname(fname)?;
     Ok(stdf)
 }
 

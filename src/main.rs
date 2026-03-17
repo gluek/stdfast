@@ -48,10 +48,7 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
         return Ok(());
     }
 
-    if let Ok(stdf) = STDF::from_fname(&fname, verbose) {
-        if verbose {
-            println!("{stdf:#?}");
-        }
+    if let Ok(stdf) = STDF::from_fname(&fname) {
         if verbose_df {
             let df_fmti: DataFrame = (&stdf.test_data.test_information).into();
             let df_fmti_sorted = df_fmti.sort(["test_num"], Default::default()).unwrap();

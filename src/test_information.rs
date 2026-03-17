@@ -338,6 +338,22 @@ impl FullTestInformation {
         Ok(test_info)
     }
 
+    pub fn from_records(records: &Vec<Record>) -> std::io::Result<Self> {
+        let mut test_info = Self::new();
+        for record in records {
+            match record {
+                Record::TSR(tsr) => {
+                    test_info.add_from_tsr(tsr);
+                }
+                Record::PTR(ptr) => {
+                    test_info.add_from_ptr(ptr);
+                }
+                _ => continue,
+            }
+        }
+        Ok(test_info)
+    }
+
     pub fn from_fname_and_summarize(
         fname: &str,
         verbose: bool,

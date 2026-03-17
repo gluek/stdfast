@@ -283,6 +283,10 @@ impl TestData {
     ///
     /// This allows the `wafer_id` field to be populated
     pub fn new_wafer(&mut self, wir: &WIR) {
+        if self.wir.is_some() {
+            panic!("Tried to open new wafer before current wafer was closed.")
+        }
+
         self.wir = Some(wir.clone());
     }
 
@@ -644,16 +648,26 @@ impl STDF {
     /// ```
     /// # Error
     /// If for some reason the file cannot be parsed, returns an `std::io::Error`
-    pub fn from_fname(fname: &str, verbose: bool) -> std::io::Result<Self> {
-        let test_info = FullTestInformation::from_fname(fname, verbose)?;
+    pub fn from_fname(fname: &str) -> std::io::Result<Self> {
+        use std::time::Instant;
+        let now = Instant::now();
+        let records = Records::new(&fname)?;
+        let mut record_collection: Vec<Record> = Vec::new();
+        for record in records {
+            if let Some(resolved) = record.resolve() {
+                record_collection.push(resolved.clone());
+            }
+        }
+        let elapsed_time = now.elapsed();
+        println!("Parsing Records took {} seconds.", elapsed_time.as_secs());
+
+        let test_info = FullTestInformation::from_records(&record_collection).unwrap();
         let mut test_data = TestData::new(test_info);
-        let mut wirs = Vec::new();
-        let mut wrrs = Vec::new();
+
+        let mut wafer_information = Vec::new();
         let mut soft_bins = HashMap::new();
         let mut hard_bins = HashMap::new();
         let mut pins = HashMap::new();
-        let mut record_collection: Vec<Record> = Vec::new();
-        let records = Records::new(&fname)?;
 
         let mut mandatory_records_found = HashMap::from([
             ("FAR", false),
@@ -665,71 +679,67 @@ impl STDF {
         let mut opt_mir: Option<MIR> = None;
         let mut opt_mrr: Option<MRR> = None;
         let mut opt_sdr: Option<SDR> = None;
-        for record in records {
-            if let Some(resolved) = record.resolve() {
-                record_collection.push(resolved.clone());
-                match resolved {
-                    Record::FAR(_) => {
-                        mandatory_records_found.insert("FAR", true);
-                    }
-                    Record::MIR(mir) => {
-                        mandatory_records_found.insert("MIR", true);
-                        opt_mir = Some(mir);
-                    }
-                    Record::SDR(sdr) => {
-                        opt_sdr = Some(sdr);
-                    }
-                    Record::SBR(sbr) => {
-                        soft_bins.insert(sbr.sbin_num, sbr);
-                    }
-                    Record::HBR(hbr) => {
-                        hard_bins.insert(hbr.hbin_num, hbr);
-                    }
-                    Record::PMR(pmr) => {
-                        pins.insert(pmr.pmr_indx, pmr);
-                    }
-                    Record::WIR(wir) => {
-                        test_data.new_wafer(&wir);
-                        wirs.push(wir);
-                    }
-                    Record::WRR(wrr) => {
-                        test_data.close_wafer();
-                        wrrs.push(wrr);
-                    }
-                    Record::PIR(ref pir) => {
-                        test_data.new_part(pir);
-                    }
-                    Record::PTR(ref ptr) => {
-                        test_data.add_data_ptr(ptr);
-                    }
-                    Record::FTR(ref ftr) => {
-                        test_data.add_data_ftr(ftr);
-                    }
-                    Record::MPR(ref mpr) => {
-                        test_data.add_data_mpr(mpr);
-                    }
-                    Record::PRR(ref prr) => {
-                        test_data.finish_part(prr);
-                    }
-                    Record::PCR(_) => {
-                        mandatory_records_found.insert("PCR", true);
-                    }
-                    Record::MRR(mrr) => {
-                        mandatory_records_found.insert("MRR", true);
-                        opt_mrr = Some(mrr);
-                    }
-                    _ => {}
+
+        let mut active_wir: Option<WIR> = None;
+
+        for record in &record_collection {
+            match record {
+                Record::FAR(_) => {
+                    mandatory_records_found.insert("FAR", true);
                 }
+                Record::MIR(mir) => {
+                    mandatory_records_found.insert("MIR", true);
+                    opt_mir = Some(mir.clone());
+                }
+                Record::SDR(sdr) => {
+                    opt_sdr = Some(sdr.clone());
+                }
+                Record::SBR(sbr) => {
+                    soft_bins.insert(sbr.sbin_num, sbr.clone());
+                }
+                Record::HBR(hbr) => {
+                    hard_bins.insert(hbr.hbin_num, hbr.clone());
+                }
+                Record::PMR(pmr) => {
+                    pins.insert(pmr.pmr_indx, pmr.clone());
+                }
+                Record::WIR(wir) => {
+                    test_data.new_wafer(&wir);
+                    active_wir = Some(wir.clone());
+                }
+                Record::PIR(pir) => {
+                    test_data.new_part(pir);
+                }
+                Record::PTR(ptr) => {
+                    test_data.add_data_ptr(ptr);
+                }
+                Record::FTR(ftr) => {
+                    test_data.add_data_ftr(ftr);
+                }
+                Record::MPR(mpr) => {
+                    test_data.add_data_mpr(mpr);
+                }
+                Record::PRR(prr) => {
+                    test_data.finish_part(prr);
+                }
+                Record::WRR(wrr) => {
+                    test_data.close_wafer();
+                    wafer_information.push(WaferInformation::new(active_wir.take()
+                        .expect("Failed to parse {fname}! Found WRR without active WIR."), wrr.clone()));
+                }
+                Record::PCR(_) => {
+                    mandatory_records_found.insert("PCR", true);
+                }
+                Record::MRR(mrr) => {
+                    mandatory_records_found.insert("MRR", true);
+                    opt_mrr = Some(mrr.clone());
+                }
+                _ => {}
             }
         }
         test_data.normalize_multipin_results();
         if let (Some(mir), Some(mrr)) = (opt_mir, opt_mrr) {
             let master_information = MasterInformation::new(mir, mrr);
-            let wafer_information = wirs
-                .into_iter()
-                .zip(wrrs.into_iter())
-                .map(|(wir, wrr)| WaferInformation::new(wir, wrr))
-                .collect();
             let site_information = opt_sdr;
             Ok(Self {
                 record_collection,
@@ -744,7 +754,7 @@ impl STDF {
         } else {
             Err(std::io::Error::new(
                 std::io::ErrorKind::UnexpectedEof,
-                format!("Failed to parse {fname}! MIR or MRR or SDR missing."),
+                format!("Failed to parse {fname}! MIR or MRR missing."),
             ))
         }
     }
@@ -777,7 +787,7 @@ impl STDF {
         DataFrame::new(columns).unwrap()
     }
 
-    /// Convert the HashMap `soft_bins` into a `DataFrame` format
+    /// Convert the HashMap `hard_bins` into a `DataFrame` format
     pub fn hard_bins_to_df(&self) -> DataFrame {
         let mut head_nums: Vec<u8> = Vec::new();
         let mut site_nums: Vec<u8> = Vec::new();
