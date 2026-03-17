@@ -2205,7 +2205,7 @@ impl WCR {
 #[allow(non_snake_case)]
 pub struct BPS {
     pub global_offset: usize,
-    pub  seq_name: String,
+    pub seq_name: String,
 }
 
 impl From<&RawRecord> for BPS {
@@ -2258,7 +2258,7 @@ impl BPS {
 #[allow(dead_code)]
 pub struct EPS {
     pub global_offset: usize,
-    dummy_field: String,
+    pub dummy_field: String,
 }
 
 impl From<&RawRecord> for EPS {

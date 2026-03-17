@@ -2,6 +2,7 @@
 # will have compiled files and executables
 debug/
 target/
+*.so
 
 # Remove Cargo.lock from gitignore if creating an executable, leave it for libraries
 # More information here https://doc.rust-lang.org/cargo/guide/cargo-toml-vs-cargo-lock.html
@@ -18,7 +19,6 @@ __pycache__
 /.venv
 uv.lock
 /*.py
-/stdfast
 
 # RustRover
 #  JetBrains specific template is maintained in a separate JetBrains.gitignore that can

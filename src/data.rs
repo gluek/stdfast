@@ -615,7 +615,7 @@ impl WaferInformation {
 #[derive(Debug, IntoPyObject)]
 pub struct STDF {
     /// Vector of individual STDF records
-    pub record_collection: Vec<Record>,
+    pub records: Vec<Record>,
     /// The STDF file metadata
     pub master_information: MasterInformation,
     ///// The STDF file metadata
@@ -649,15 +649,15 @@ impl STDF {
     /// # Error
     /// If for some reason the file cannot be parsed, returns an `std::io::Error`
     pub fn from_fname(fname: &str) -> std::io::Result<Self> {
-        let records = Records::new(&fname)?;
-        let mut record_collection: Vec<Record> = Vec::new();
-        for record in records {
+        let raw_records = Records::new(&fname)?;
+        let mut records: Vec<Record> = Vec::new();
+        for record in raw_records {
             if let Some(resolved) = record.resolve() {
-                record_collection.push(resolved.clone());
+                records.push(resolved.clone());
             }
         }
 
-        let test_info = FullTestInformation::from_records(&record_collection).unwrap();
+        let test_info = FullTestInformation::from_records(&records).unwrap();
         let mut test_data = TestData::new(test_info);
 
         let mut wafer_information = Vec::new();
@@ -678,7 +678,7 @@ impl STDF {
 
         let mut active_wir: Option<WIR> = None;
 
-        for record in &record_collection {
+        for record in &records {
             match record {
                 Record::FAR(_) => {
                     mandatory_records_found.insert("FAR", true);
@@ -738,7 +738,7 @@ impl STDF {
             let master_information = MasterInformation::new(mir, mrr);
             let site_information = opt_sdr;
             Ok(Self {
-                record_collection,
+                records,
                 master_information,
                 wafer_information,
                 site_information,
@@ -844,7 +844,7 @@ impl STDF {
 
     /// Convert STDF to ATDF
     pub fn to_atdf(&self) -> std::io::Result<()> {
-        for record in &self.record_collection {
+        for record in &self.records {
             println!("{record}");
         }
         Ok(())

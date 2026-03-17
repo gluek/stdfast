@@ -22,11 +22,11 @@ use pyo3_polars::PyDataFrame;
 #[derive(IntoPyObject)]
 struct PySTDF {
     /// MIR and MRR information
-    metadata: MasterInformation,
+    master_information: MasterInformation,
+    /// The site information
+    site_description: Option<SDR>,
     /// WIR and WRR information
     wafers: Vec<WaferInformation>,
-    /// The site information
-    site_information: Option<SDR>,
     /// The soft-bin information
     soft_bins: PyDataFrame,
     /// The hard-bin information
@@ -36,7 +36,7 @@ struct PySTDF {
     /// The test number -> [pin_id] mapping
     pin_mapping: HashMap<u32, Vec<u16>>,
     /// The `DataFrame` containing the test results (corresponds to `TestData`)
-    df: PyDataFrame,
+    data: PyDataFrame,
     /// The `DataFrame` containing the test information metadata (corresponds to
     /// `FullMergedTestInformation`)
     test_information: PyDataFrame,
@@ -51,27 +51,27 @@ impl PySTDF {
     /// Analagous to `STDF::from_fname`
     fn from_fname(fname: &str) -> std::io::Result<Self> {
         let stdf = STDF::from_fname(&fname)?;
-        let metadata = stdf.master_information.clone();
+        let master_information = stdf.master_information.clone();
+        let site_description = stdf.site_information.clone();
         let wafers = stdf.wafer_information.clone();
-        let site_information = stdf.site_information.clone();
         let soft_bins = PyDataFrame(stdf.soft_bins_to_df());
         let hard_bins = PyDataFrame(stdf.hard_bins_to_df());
         let pins = PyDataFrame(stdf.pin_mapping_to_df());
         let pin_mapping = stdf.test_data.mpr_index_lookup.clone();
         let test_data = &stdf.test_data;
         let test_info = &test_data.test_information;
-        let df = PyDataFrame(test_data.into());
+        let data = PyDataFrame(test_data.into());
         let test_information = PyDataFrame(test_info.into());
         let full_test_information = stdf.test_data.full_test_information.test_infos;
         Ok(Self {
-            metadata,
+            master_information,
+            site_description,
             wafers,
-            site_information,
             soft_bins,
             hard_bins,
             pins,
             pin_mapping,
-            df,
+            data,
             test_information,
             full_test_information,
         })
@@ -86,10 +86,19 @@ impl PySTDF {
 /// `fname` must be a `str` and may not be a `Path`-like object.
 ///
 /// Returns a dict with keys and values:
-///    `mir`: `dict` describing the Master Infomation Record (file metadata)
-///    `df`: `DataFrame` containing the test results
+///    `master_information`: `dict` describing the Master Information Record and Master
+///        Results Record (file metadata)
+///    `site_description`: `dict` describing the Site Description Record, or `None`
+///    `wafers`: `list` of `dict` describing the Wafer Information Records and Wafer
+///        Results Records (wafer metadata)
+///    `soft_bins`: `DataFrame` containing the soft-bin information
+///    `hard_bins`: `DataFrame` containing the hard-bin information
+///    `pins`: `DataFrame` containing the pin mapping information
+///    `pin_mapping`: `dict` mapping test number to a list of pin indices
+///    `data`: `DataFrame` containing the test results
 ///    `test_information`: `DataFrame` containing the merged test information metadata
-///    `full_test_information`: `dict` containing the full test information metadata
+///    `full_test_information`: `dict` mapping `(test_num, site_num, head_num)` to
+///        full test information metadata
 ///
 /// # Example
 /// ```python
@@ -170,5 +179,6 @@ fn stdfast(m: &Bound<'_, PyModule>) -> PyResult<()> {
     m.add_function(wrap_pyfunction!(parse_stdf, m)?)?;
     m.add_function(wrap_pyfunction!(get_rows, m)?)?;
     m.add_function(wrap_pyfunction!(get_raw_stdf, m)?)?;
+    m.add_function(wrap_pyfunction!(crate::write_py::write_stdf, m)?)?;
     Ok(())
 }
