@@ -9,18 +9,21 @@ use std::{io, fmt};
 #[derive(Debug, IntoPyObject, Clone)]
 #[allow(dead_code)]
 pub struct FAR {
+    pub global_offset: usize,
     pub cpu_type: u8,
     pub stdf_ver: u8,
 }
 
 impl From<&RawRecord> for FAR {
     fn from(record: &RawRecord) -> Self {
+        let global_offset = record.offset;
         let contents = &record.contents;
         let mut offset: usize = 0;
         let cpu_type = U1(contents, &mut offset);
         let stdf_ver = U1(contents, &mut offset);
 
         Self {
+            global_offset,
             cpu_type,
             stdf_ver
         }
@@ -50,18 +53,21 @@ impl FAR {
 #[derive(Debug, IntoPyObject, Clone)]
 #[allow(dead_code)]
 pub struct ATR {
+    pub global_offset: usize,
     pub mod_tim: u32,
     pub cmd_line: String,
 }
 
 impl From<&RawRecord> for ATR {
     fn from(record: &RawRecord) -> Self {
+        let global_offset = record.offset;
         let contents = &record.contents;
         let mut offset: usize = 0;
         let mod_tim = U4(contents, &mut offset);
         let cmd_line = Cn(contents, &mut offset);
 
         Self {
+            global_offset,
             mod_tim,
             cmd_line,
         }
@@ -93,6 +99,7 @@ impl ATR {
 #[derive(Debug, IntoPyObject, Clone)]
 #[allow(dead_code)]
 pub struct MIR {
+    pub global_offset: usize,
     pub setup_t: u32,
     pub start_t: u32,
     pub stat_num: u8,
@@ -135,6 +142,7 @@ pub struct MIR {
 
 impl From<&RawRecord> for MIR {
     fn from(record: &RawRecord) -> Self {
+        let global_offset = record.offset;
         let contents = &record.contents;
         let mut offset: usize = 0;
         let setup_t = U4(contents, &mut offset);
@@ -177,6 +185,7 @@ impl From<&RawRecord> for MIR {
         let supr_nam = Cn(contents, &mut offset);
 
         Self {
+            global_offset,
             setup_t,
             start_t,
             stat_num,
@@ -375,6 +384,7 @@ impl MIR {
 #[derive(Debug, Clone, IntoPyObject)]
 #[allow(dead_code)]
 pub struct SDR {
+    pub global_offset: usize,
     pub head_num: u8,
     pub site_grp: u8,
     pub site_cnt: u8,
@@ -399,6 +409,7 @@ pub struct SDR {
 
 impl From<&RawRecord> for SDR {
     fn from(record: &RawRecord) -> Self {
+        let global_offset = record.offset;
         let contents = &record.contents;
         let mut offset: usize = 0;
         let head_num = U1(contents, &mut offset);
@@ -423,6 +434,7 @@ impl From<&RawRecord> for SDR {
         let extr_i = Cn(contents, &mut offset);
 
         Self {
+            global_offset,
             head_num,
             site_grp,
             site_cnt,
@@ -527,6 +539,7 @@ impl SDR {
 #[allow(dead_code)]
 #[allow(non_snake_case)]
 pub struct TSR {
+    pub global_offset: usize,
     pub head_num: u8,
     pub site_num: u8,
     pub test_typ: char,
@@ -547,6 +560,7 @@ pub struct TSR {
 
 impl From<&RawRecord> for TSR {
     fn from(record: &RawRecord) -> Self {
+        let global_offset = record.offset;
         let contents = &record.contents;
         let mut offset: usize = 0;
         let head_num = U1(contents, &mut offset);
@@ -567,6 +581,7 @@ impl From<&RawRecord> for TSR {
         let tst_sqrs = R4(contents, &mut offset);
 
         Self {
+            global_offset,
             head_num,
             site_num,
             test_typ,
@@ -644,6 +659,7 @@ impl TSR {
 #[allow(dead_code)]
 #[allow(non_snake_case)]
 pub struct SBR {
+    pub global_offset: usize,
     pub head_num: u8,
     pub site_num: u8,
     pub sbin_num: u16,
@@ -654,6 +670,7 @@ pub struct SBR {
 
 impl From<&RawRecord> for SBR {
     fn from(record: &RawRecord) -> Self {
+        let global_offset = record.offset;
         let contents = &record.contents;
         let mut offset: usize = 0;
         let head_num = U1(contents, &mut offset);
@@ -664,6 +681,7 @@ impl From<&RawRecord> for SBR {
         let sbin_nam = Cn(contents, &mut offset);
 
         Self {
+            global_offset,
             head_num,
             site_num,
             sbin_num,
@@ -710,6 +728,7 @@ impl SBR {
 #[allow(dead_code)]
 #[allow(non_snake_case)]
 pub struct WIR {
+    pub global_offset: usize,
     pub head_num: u8,
     pub site_grp: u8,
     pub start_t: u32,
@@ -718,6 +737,7 @@ pub struct WIR {
 
 impl From<&RawRecord> for WIR {
     fn from(record: &RawRecord) -> Self {
+        let global_offset = record.offset;
         let contents = &record.contents;
         let mut offset: usize = 0;
         let head_num = U1(contents, &mut offset);
@@ -726,6 +746,7 @@ impl From<&RawRecord> for WIR {
         let wafer_id = Cn(contents, &mut offset);
 
         Self {
+            global_offset,
             head_num,
             site_grp,
             start_t,
@@ -766,6 +787,7 @@ impl WIR {
 #[allow(dead_code)]
 #[allow(non_snake_case)]
 pub struct WRR {
+    pub global_offset: usize,
     pub head_num: u8,
     pub site_grp: u8,
     pub finish_t: u32,
@@ -784,6 +806,7 @@ pub struct WRR {
 
 impl From<&RawRecord> for WRR {
     fn from(record: &RawRecord) -> Self {
+        let global_offset = record.offset;
         let contents = &record.contents;
         let mut offset: usize = 0;
         let head_num = U1(contents, &mut offset);
@@ -802,6 +825,7 @@ impl From<&RawRecord> for WRR {
         let exc_desc = Cn(contents, &mut offset);
 
         Self {
+            global_offset,
             head_num,
             site_grp,
             finish_t,
@@ -877,6 +901,7 @@ impl WRR {
 #[allow(dead_code)]
 #[allow(non_snake_case)]
 pub struct HBR {
+    pub global_offset: usize,
     pub head_num: u8,
     pub site_num: u8,
     pub hbin_num: u16,
@@ -887,6 +912,7 @@ pub struct HBR {
 
 impl From<&RawRecord> for HBR {
     fn from(record: &RawRecord) -> Self {
+        let global_offset = record.offset;
         let contents = &record.contents;
         let mut offset: usize = 0;
         let head_num = U1(contents, &mut offset);
@@ -897,6 +923,7 @@ impl From<&RawRecord> for HBR {
         let hbin_nam = Cn(contents, &mut offset);
 
         Self {
+            global_offset,
             head_num,
             site_num,
             hbin_num,
@@ -943,6 +970,7 @@ impl HBR {
 #[allow(dead_code)]
 #[allow(non_snake_case)]
 pub struct PCR {
+    pub global_offset: usize,
     pub head_num: u8,
     pub site_num: u8,
     pub part_cnt: u32,
@@ -954,6 +982,7 @@ pub struct PCR {
 
 impl From<&RawRecord> for PCR {
     fn from(record: &RawRecord) -> Self {
+        let global_offset = record.offset;
         let contents = &record.contents;
         let mut offset: usize = 0;
         let head_num = U1(contents, &mut offset);
@@ -965,6 +994,7 @@ impl From<&RawRecord> for PCR {
         let func_cnt = U4(contents, &mut offset);
 
         Self {
+            global_offset,
             head_num,
             site_num,
             part_cnt,
@@ -1013,17 +1043,19 @@ impl PCR {
 #[allow(dead_code)]
 #[allow(non_snake_case)]
 pub struct PIR {
+    pub global_offset: usize,
     pub head_num: u8,
     pub site_num: u8,
 }
 
 impl From<&RawRecord> for PIR {
     fn from(record: &RawRecord) -> Self {
+        let global_offset = record.offset;
         let contents = &record.contents;
         let head_num = contents[0];
         let site_num = contents[1];
 
-        Self { head_num, site_num }
+        Self { global_offset, head_num, site_num }
     }
 }
 
@@ -1051,6 +1083,7 @@ impl PIR {
 #[allow(dead_code)]
 #[allow(non_snake_case)]
 pub struct PRR {
+    pub global_offset: usize,
     pub head_num: u8,
     pub site_num: u8,
     pub part_flg: u8,
@@ -1067,6 +1100,7 @@ pub struct PRR {
 
 impl From<&RawRecord> for PRR {
     fn from(record: &RawRecord) -> Self {
+        let global_offset = record.offset;
         let contents = &record.contents;
         let mut offset: usize = 0;
         let head_num = U1(contents, &mut offset);
@@ -1083,6 +1117,7 @@ impl From<&RawRecord> for PRR {
         let part_fix = Bn(contents, &mut offset);
 
         Self {
+            global_offset,
             head_num,
             site_num,
             part_flg,
@@ -1152,6 +1187,7 @@ impl PRR {
 #[allow(dead_code)]
 #[allow(non_snake_case)]
 pub struct MRR {
+    pub global_offset: usize,
     pub finish_t: u32,
     pub disp_cod: char,
     pub usr_desc: String,
@@ -1160,6 +1196,7 @@ pub struct MRR {
 
 impl From<&RawRecord> for MRR {
     fn from(record: &RawRecord) -> Self {
+        let global_offset = record.offset;
         let contents = &record.contents;
         let mut offset: usize = 0;
         let finish_t = U4(contents, &mut offset);
@@ -1168,6 +1205,7 @@ impl From<&RawRecord> for MRR {
         let exc_desc = Cn(contents, &mut offset);
 
         Self {
+            global_offset,
             finish_t,
             disp_cod,
             usr_desc,
@@ -1209,6 +1247,7 @@ impl MRR {
 #[allow(dead_code)]
 #[allow(non_snake_case)]
 pub struct PTR {
+    pub global_offset: usize,
     pub test_num: u32,
     pub head_num: u8,
     pub site_num: u8,
@@ -1233,6 +1272,7 @@ pub struct PTR {
 
 impl From<&RawRecord> for PTR {
     fn from(record: &RawRecord) -> Self {
+        let global_offset = record.offset;
         let contents = &record.contents;
         let mut offset: usize = 0;
         let test_num = U4(contents, &mut offset);
@@ -1284,6 +1324,7 @@ impl From<&RawRecord> for PTR {
         }
 
         Self {
+            global_offset,
             test_num,
             head_num,
             site_num,
@@ -1380,6 +1421,7 @@ impl fmt::Display for PTR {
 #[allow(dead_code)]
 #[allow(non_snake_case)]
 pub struct FTR {
+    pub global_offset: usize,
     pub test_num: u32,
     pub head_num: u8,
     pub site_num: u8,
@@ -1412,6 +1454,7 @@ pub struct FTR {
 
 impl From<&RawRecord> for FTR {
     fn from(record: &RawRecord) -> Self {
+        let global_offset = record.offset;
         let contents = &record.contents;
         let mut offset: usize = 0;
         let test_num = U4(contents, &mut offset);
@@ -1445,6 +1488,7 @@ impl From<&RawRecord> for FTR {
         let spin_map = Dn(contents, &mut offset);
 
         Self {
+            global_offset,
             test_num,
             head_num,
             site_num,
@@ -1600,6 +1644,7 @@ impl fmt::Display for FTR {
 #[allow(dead_code)]
 #[allow(non_snake_case)]
 pub struct MPR {
+    pub global_offset: usize,
     pub test_num: u32,
     pub head_num: u8,
     pub site_num: u8,
@@ -1631,6 +1676,7 @@ pub struct MPR {
 
 impl From<&RawRecord> for MPR {
     fn from(record: &RawRecord) -> Self {
+        let global_offset = record.offset;
         let contents = &record.contents;
         let mut offset: usize = 0;
 
@@ -1663,6 +1709,7 @@ impl From<&RawRecord> for MPR {
         let hi_spec = R4(contents, &mut offset);
 
         Self {
+            global_offset,
             test_num,
             head_num,
             site_num,
@@ -1786,6 +1833,7 @@ impl MPR {
 #[allow(dead_code)]
 #[allow(non_snake_case)]
 pub struct PMR {
+    pub global_offset: usize,
     pub pmr_indx: u16,
     pub chan_typ: u16,
     pub chan_nam: String,
@@ -1797,6 +1845,7 @@ pub struct PMR {
 
 impl From<&RawRecord> for PMR {
     fn from(record: &RawRecord) -> Self {
+        let global_offset = record.offset;
         let contents = &record.contents;
         let mut offset: usize = 0;
 
@@ -1809,6 +1858,7 @@ impl From<&RawRecord> for PMR {
         let site_num = U1(contents, &mut offset);
 
         Self {
+            global_offset,
             pmr_indx,
             chan_typ,
             chan_nam,
@@ -1860,6 +1910,7 @@ impl PMR {
 #[allow(dead_code)]
 #[allow(non_snake_case)]
 pub struct PGR {
+    pub global_offset: usize,
     pub grp_indx: u16,
     pub grp_nam: String,
     pub indx_cnt: u16,
@@ -1868,6 +1919,7 @@ pub struct PGR {
 
 impl From<&RawRecord> for PGR {
     fn from(record: &RawRecord) -> Self {
+        let global_offset = record.offset;
         let contents = &record.contents;
         let mut offset: usize = 0;
 
@@ -1877,6 +1929,7 @@ impl From<&RawRecord> for PGR {
         let pmr_indx = kxU2(contents, indx_cnt.into(), &mut offset);
 
         Self {
+            global_offset,
             grp_indx,
             grp_nam,
             indx_cnt,
@@ -1919,6 +1972,7 @@ impl PGR {
 #[allow(dead_code)]
 #[allow(non_snake_case)]
 pub struct PLR {
+    pub global_offset: usize,
     pub grp_cnt: u16,
     pub grp_indx: Vec<u16>,
     pub grp_mode: Vec<u16>,
@@ -1931,6 +1985,7 @@ pub struct PLR {
 
 impl From<&RawRecord> for PLR {
     fn from(record: &RawRecord) -> Self {
+        let global_offset = record.offset;
         let contents = &record.contents;
         let mut offset: usize = 0;
 
@@ -1944,6 +1999,7 @@ impl From<&RawRecord> for PLR {
         let rtn_chal = kxCn(contents, grp_cnt.into(), &mut offset);
 
         Self {
+            global_offset,
             grp_cnt,
             grp_indx,
             grp_mode,
@@ -2018,18 +2074,21 @@ impl PLR {
 #[allow(dead_code)]
 #[allow(non_snake_case)]
 pub struct RDR {
+    pub global_offset: usize,
     pub num_bins: u16,
     pub rtst_bin: Vec<u16>,
 }
 
 impl From<&RawRecord> for RDR {
     fn from(record: &RawRecord) -> Self {
+        let global_offset = record.offset;
         let contents = &record.contents;
         let mut offset: usize = 0;
         let num_bins = U2(contents, &mut offset);
         let rtst_bin = kxU2(contents, num_bins.into(), &mut offset);
 
         Self {
+            global_offset,
             num_bins,
             rtst_bin
         }
@@ -2062,6 +2121,7 @@ impl RDR {
 #[allow(dead_code)]
 #[allow(non_snake_case)]
 pub struct WCR {
+    pub global_offset: usize,
     pub wafr_siz: f32,
     pub die_ht: f32,
     pub die_wid: f32,
@@ -2075,6 +2135,7 @@ pub struct WCR {
 
 impl From<&RawRecord> for WCR {
     fn from(record: &RawRecord) -> Self {
+        let global_offset = record.offset;
         let contents = &record.contents;
         let mut offset: usize = 0;
         let wafr_siz = R4(contents, &mut offset);
@@ -2088,6 +2149,7 @@ impl From<&RawRecord> for WCR {
         let pos_y = C1(contents, &mut offset);
 
         Self {
+            global_offset,
             wafr_siz,
             die_ht,
             die_wid,
@@ -2142,16 +2204,19 @@ impl WCR {
 #[allow(dead_code)]
 #[allow(non_snake_case)]
 pub struct BPS {
+    pub global_offset: usize,
     pub  seq_name: String,
 }
 
 impl From<&RawRecord> for BPS {
     fn from(record: &RawRecord) -> Self {
+        let global_offset = record.offset;
         let contents = &record.contents;
         let mut offset: usize = 0;
         let seq_name = Cn(contents, &mut offset);
 
         Self {
+            global_offset,
             seq_name,
         }
     }
@@ -2192,13 +2257,16 @@ impl BPS {
 #[derive(Debug, Clone, IntoPyObject)]
 #[allow(dead_code)]
 pub struct EPS {
+    pub global_offset: usize,
     dummy_field: String,
 }
 
 impl From<&RawRecord> for EPS {
-    fn from(_record: &RawRecord) -> Self {
+    fn from(record: &RawRecord) -> Self {
+        let global_offset = record.offset;
         let dummy_field = "".to_string();
         Self {
+            global_offset,
             dummy_field,
         }
     }
@@ -2226,18 +2294,21 @@ impl EPS {
 #[allow(dead_code)]
 #[allow(non_snake_case)]
 pub struct GDR {
+    pub global_offset: usize,
     pub fld_cnt: u16,
     pub gen_data: Vec<GenData>,
 }
 
 impl From<&RawRecord> for GDR {
     fn from(record: &RawRecord) -> Self {
+        let global_offset = record.offset;
         let contents = &record.contents;
         let mut offset: usize = 0;
         let fld_cnt = U2(contents, &mut offset);
         let gen_data = Vn(contents, fld_cnt.into(), &mut offset);
 
         Self {
+            global_offset,
             fld_cnt,
             gen_data,
         }
@@ -2301,16 +2372,19 @@ impl GDR {
 #[allow(dead_code)]
 #[allow(non_snake_case)]
 pub struct DTR {
+    pub global_offset: usize,
     pub  text_dat: String,
 }
 
 impl From<&RawRecord> for DTR {
     fn from(record: &RawRecord) -> Self {
+        let global_offset = record.offset;
         let contents = &record.contents;
         let mut offset: usize = 0;
         let text_dat = Cn(contents, &mut offset);
 
         Self {
+            global_offset,
             text_dat,
         }
     }

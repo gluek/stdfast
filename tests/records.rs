@@ -41,6 +41,7 @@ fn assert_f32_bits_eq(a: f32, b: f32) {
 #[test]
 fn test_far_roundtrip() {
     let original = FAR {
+        global_offset: 0,
         cpu_type: 2,
         stdf_ver: 4,
     };
@@ -59,6 +60,7 @@ fn test_far_roundtrip() {
 #[test]
 fn test_pir_roundtrip() {
     let original = PIR {
+        global_offset: 0,
         head_num: 1,
         site_num: 3,
     };
@@ -77,6 +79,7 @@ fn test_pir_roundtrip() {
 #[test]
 fn test_prr_roundtrip() {
     let original = PRR {
+        global_offset: 0,
         head_num: 1,
         site_num: 2,
         part_flg: 0,
@@ -115,6 +118,7 @@ fn test_prr_roundtrip() {
 #[test]
 fn test_ptr_roundtrip() {
     let original = PTR {
+        global_offset: 0,
         test_num: 1001,
         head_num: 1,
         site_num: 0,
@@ -170,6 +174,7 @@ fn test_ptr_roundtrip() {
 fn test_ftr_roundtrip() {
     // Even rtn_icnt and pgm_icnt keep nibble arrays length-stable across round-trips.
     let original = FTR {
+        global_offset: 0,
         test_num: 2001,
         head_num: 1,
         site_num: 0,
@@ -239,6 +244,7 @@ fn test_ftr_roundtrip() {
 #[test]
 fn test_ftr_nibble_odd_padding() {
     let original = FTR {
+        global_offset: 0,
         test_num: 2002,
         head_num: 1,
         site_num: 0,
@@ -286,6 +292,7 @@ fn test_ftr_nibble_odd_padding() {
 #[test]
 fn test_mpr_roundtrip() {
     let original = MPR {
+        global_offset: 0,
         test_num: 3001,
         head_num: 1,
         site_num: 0,
@@ -357,6 +364,7 @@ fn test_mpr_roundtrip() {
 #[test]
 fn test_atr_roundtrip() {
     let original = ATR {
+        global_offset: 0,
         mod_tim: 1700000000,
         cmd_line: "stdfast --convert input.stdf".to_string(),
     };
@@ -375,6 +383,7 @@ fn test_atr_roundtrip() {
 #[test]
 fn test_mir_roundtrip() {
     let original = MIR {
+        global_offset: 0,
         setup_t: 1700000000,
         start_t: 1700000100,
         stat_num: 3,
@@ -465,6 +474,7 @@ fn test_mir_roundtrip() {
 #[test]
 fn test_mrr_roundtrip() {
     let original = MRR {
+        global_offset: 0,
         finish_t: 1700001000,
         disp_cod: 'P',
         usr_desc: "All tests passed".to_string(),
@@ -487,6 +497,7 @@ fn test_mrr_roundtrip() {
 #[test]
 fn test_pcr_roundtrip() {
     let original = PCR {
+        global_offset: 0,
         head_num: 255,
         site_num: 255,
         part_cnt: 1000,
@@ -515,6 +526,7 @@ fn test_pcr_roundtrip() {
 #[test]
 fn test_hbr_roundtrip() {
     let original = HBR {
+        global_offset: 0,
         head_num: 1,
         site_num: 0,
         hbin_num: 1,
@@ -541,6 +553,7 @@ fn test_hbr_roundtrip() {
 #[test]
 fn test_sbr_roundtrip() {
     let original = SBR {
+        global_offset: 0,
         head_num: 1,
         site_num: 0,
         sbin_num: 10,
@@ -567,6 +580,7 @@ fn test_sbr_roundtrip() {
 #[test]
 fn test_pmr_roundtrip() {
     let original = PMR {
+        global_offset: 0,
         pmr_indx: 42,
         chan_typ: 1,
         chan_nam: "CH_A".to_string(),
@@ -595,6 +609,7 @@ fn test_pmr_roundtrip() {
 #[test]
 fn test_pgr_roundtrip() {
     let original = PGR {
+        global_offset: 0,
         grp_indx: 100,
         grp_nam: "POWER_PINS".to_string(),
         indx_cnt: 3,
@@ -617,6 +632,7 @@ fn test_pgr_roundtrip() {
 #[test]
 fn test_plr_roundtrip() {
     let original = PLR {
+        global_offset: 0,
         grp_cnt: 2,
         grp_indx: vec![100, 101],
         grp_mode: vec![0x0200, 0x0200],
@@ -647,6 +663,7 @@ fn test_plr_roundtrip() {
 #[test]
 fn test_rdr_roundtrip() {
     let original = RDR {
+        global_offset: 0,
         num_bins: 4,
         rtst_bin: vec![1, 5, 10, 255],
     };
@@ -665,6 +682,7 @@ fn test_rdr_roundtrip() {
 #[test]
 fn test_sdr_roundtrip() {
     let original = SDR {
+        global_offset: 0,
         head_num: 1,
         site_grp: 0,
         site_cnt: 3,
@@ -719,6 +737,7 @@ fn test_sdr_roundtrip() {
 #[test]
 fn test_wir_roundtrip() {
     let original = WIR {
+        global_offset: 0,
         head_num: 1,
         site_grp: 255,
         start_t: 1700000200,
@@ -741,6 +760,7 @@ fn test_wir_roundtrip() {
 #[test]
 fn test_wrr_roundtrip() {
     let original = WRR {
+        global_offset: 0,
         head_num: 1,
         site_grp: 255,
         finish_t: 1700003600,
@@ -783,6 +803,7 @@ fn test_wrr_roundtrip() {
 #[test]
 fn test_wcr_roundtrip() {
     let original = WCR {
+        global_offset: 0,
         wafr_siz: 300.0,
         die_ht: 5.5,
         die_wid: 4.2,
@@ -815,6 +836,7 @@ fn test_wcr_roundtrip() {
 #[test]
 fn test_tsr_roundtrip() {
     let original = TSR {
+        global_offset: 0,
         head_num: 1,
         site_num: 0,
         test_typ: 'P',
@@ -861,6 +883,7 @@ fn test_tsr_roundtrip() {
 #[test]
 fn test_bps_roundtrip() {
     let original = BPS {
+        global_offset: 0,
         seq_name: "section_alpha".to_string(),
     };
     let bytes = original.bytes();
@@ -893,6 +916,7 @@ fn test_eps_roundtrip() {
 #[test]
 fn test_dtr_roundtrip() {
     let original = DTR {
+        global_offset: 0,
         text_dat: "This is a datalog entry with special chars: <>/&".to_string(),
     };
     let bytes = original.bytes();
@@ -909,6 +933,7 @@ fn test_dtr_roundtrip() {
 #[test]
 fn test_gdr_roundtrip() {
     let original = GDR {
+        global_offset: 0,
         fld_cnt: 8,
         gen_data: vec![
             GenData::U1(42),

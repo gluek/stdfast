@@ -649,8 +649,6 @@ impl STDF {
     /// # Error
     /// If for some reason the file cannot be parsed, returns an `std::io::Error`
     pub fn from_fname(fname: &str) -> std::io::Result<Self> {
-        use std::time::Instant;
-        let now = Instant::now();
         let records = Records::new(&fname)?;
         let mut record_collection: Vec<Record> = Vec::new();
         for record in records {
@@ -658,8 +656,6 @@ impl STDF {
                 record_collection.push(resolved.clone());
             }
         }
-        let elapsed_time = now.elapsed();
-        println!("Parsing Records took {} seconds.", elapsed_time.as_secs());
 
         let test_info = FullTestInformation::from_records(&record_collection).unwrap();
         let mut test_data = TestData::new(test_info);
