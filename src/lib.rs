@@ -4,7 +4,7 @@
 //! directly in rust, or alternatively sent out to Python using the `parse_stdf` function.
 //!
 //! # Example
-//! ```
+//! ```ignore
 //! let verbose = false;
 //! if let Ok(stdf) = STDF::from_fname(&fname, verbose) {
 //!     let df: DataFrame = (&stdf.test_data).into();
@@ -15,11 +15,11 @@
 //! ```
 //!
 //! Also contains Python bindings to this functionality, e.g.
-//! ```
+//! ```python
 //!    import stdfast as sf
 //!    stdf = sf.parse_stdf("my_stdf.stdf")
 //!    stdf['df']
-//! ````
+//! ```
 
 pub mod data;
 pub mod data_py;

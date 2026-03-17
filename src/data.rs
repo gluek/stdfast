@@ -599,7 +599,7 @@ impl WaferInformation {
 /// `STDF` contains the STDF file metadata (`mir`) and the test results data (`test_data`)
 ///
 /// # Example
-/// ```
+/// ```ignore
 /// let verbose = false;
 /// if let Ok(stdf) = STDF::from_fname(&fname, verbose) {
 ///     let df: DataFrame = (&stdf.test_data).into();
@@ -632,7 +632,7 @@ impl STDF {
     /// Parses an STDF file from the file specified by `fname`
     ///
     /// # Example
-    /// ```
+    /// ```ignore
     /// let verbose = false;
     /// if let Ok(stdf) = STDF::from_fname(&fname, verbose) {
     ///     let df: DataFrame = (&stdf.test_data).into();
@@ -655,6 +655,13 @@ impl STDF {
         let mut record_collection: Vec<Record> = Vec::new();
         let records = Records::new(&fname)?;
 
+        let mut mandatory_records_found = HashMap::from([
+            ("FAR", false),
+            ("MIR", false),
+            ("PCR", false),
+            ("MRR", false)
+        ]);
+
         let mut opt_mir: Option<MIR> = None;
         let mut opt_mrr: Option<MRR> = None;
         let mut opt_sdr: Option<SDR> = None;
@@ -662,11 +669,12 @@ impl STDF {
             if let Some(resolved) = record.resolve() {
                 record_collection.push(resolved.clone());
                 match resolved {
-                    Record::MIR(mir) => {
-                        opt_mir = Some(mir);
+                    Record::FAR(_) => {
+                        mandatory_records_found.insert("FAR", true);
                     }
-                    Record::MRR(mrr) => {
-                        opt_mrr = Some(mrr);
+                    Record::MIR(mir) => {
+                        mandatory_records_found.insert("MIR", true);
+                        opt_mir = Some(mir);
                     }
                     Record::SDR(sdr) => {
                         opt_sdr = Some(sdr);
@@ -702,6 +710,13 @@ impl STDF {
                     }
                     Record::PRR(ref prr) => {
                         test_data.finish_part(prr);
+                    }
+                    Record::PCR(_) => {
+                        mandatory_records_found.insert("PCR", true);
+                    }
+                    Record::MRR(mrr) => {
+                        mandatory_records_found.insert("MRR", true);
+                        opt_mrr = Some(mrr);
                     }
                     _ => {}
                 }

@@ -3,7 +3,7 @@
 //! The relevant function is `stdfast.parse_stdf`
 //!
 //! # Example
-//! ```
+//! ```python
 //! import stdfast as sf
 //! stdf = sf.parse_stdf("my_stdf.stdf")
 //! stdf['df']
@@ -92,11 +92,11 @@ impl PySTDF {
 ///    `full_test_information`: `dict` containing the full test information metadata
 ///
 /// # Example
-/// ```
+/// ```python
 ///    import stdfast as sf
 ///    stdf = sf.parse_stdf("my_stdf.stdf")
 ///    stdf['df']
-/// ````
+/// ```
 #[pyfunction]
 fn parse_stdf(fname: &str) -> PyResult<PySTDF> {
     let pystdf = PySTDF::from_fname(&fname)?;
@@ -115,11 +115,11 @@ fn parse_stdf(fname: &str) -> PyResult<PySTDF> {
 /// i.e. a proper list, not a generator.
 ///
 /// # Example
-/// ```
+/// ```python
 ///    import stdfast as sf
 ///    rows = sf.get_rows("my_stdf.stdf")
 ///    rows[0]
-/// ````
+/// ```
 #[pyfunction]
 fn get_rows(fname: &str) -> PyResult<Vec<Row>> {
     let test_data = TestData::from_fname(fname, false)?;
@@ -147,11 +147,11 @@ fn get_rows(fname: &str) -> PyResult<Vec<Row>> {
 ///    `test_data`: a `dict` describing all of the test results
 ///
 /// # Example
-/// ```
+/// ```python
 ///    import stdfast as sf
 ///    raw_stdf = sf.get_raw_stdf("my_stdf.stdf")
 ///    raw_stdf['master_information']
-/// ````
+/// ```
 #[pyfunction]
 fn get_raw_stdf(fname: &str) -> PyResult<STDF> {
     let stdf = STDF::from_fname(fname, false)?;

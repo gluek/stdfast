@@ -18,6 +18,7 @@ __pycache__
 /.venv
 uv.lock
 /*.py
+/stdfast
 
 # RustRover
 #  JetBrains specific template is maintained in a separate JetBrains.gitignore that can

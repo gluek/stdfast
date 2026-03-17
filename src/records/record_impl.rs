@@ -1,6 +1,7 @@
 use super::Records;
 use crate::records::RawRecord;
 use crate::util::*;
+pub use crate::util::GenData;
 use pyo3::prelude::IntoPyObject;
 use std::{io, fmt};
 
@@ -1981,13 +1982,21 @@ impl PLR {
         let rec_typ_sub: &[u8] = &[1u8, 63u8];
         let grp_indx_bytes: Vec<u8> = self.grp_indx.iter().flat_map(|x| x.to_ne_bytes()).collect();
         let grp_mode_bytes: Vec<u8> = self.grp_mode.iter().flat_map(|x| x.to_ne_bytes()).collect();
-        let pgm_char_bytes: Vec<u8> = self.pgm_char.iter().flat_map(|s| s.as_bytes().to_vec()).collect();
+        let pgm_char_bytes: Vec<u8> = self.pgm_char.iter().flat_map(|s| {
+            let b = s.as_bytes(); let mut v = vec![b.len() as u8]; v.extend_from_slice(b); v
+        }).collect();
         rec_len += pgm_char_bytes.len() as i16;
-        let rtn_char_bytes: Vec<u8> = self.rtn_char.iter().flat_map(|s| s.as_bytes().to_vec()).collect();
+        let rtn_char_bytes: Vec<u8> = self.rtn_char.iter().flat_map(|s| {
+            let b = s.as_bytes(); let mut v = vec![b.len() as u8]; v.extend_from_slice(b); v
+        }).collect();
         rec_len += rtn_char_bytes.len() as i16;
-        let pgm_chal_bytes: Vec<u8> = self.pgm_chal.iter().flat_map(|s| s.as_bytes().to_vec()).collect();
+        let pgm_chal_bytes: Vec<u8> = self.pgm_chal.iter().flat_map(|s| {
+            let b = s.as_bytes(); let mut v = vec![b.len() as u8]; v.extend_from_slice(b); v
+        }).collect();
         rec_len += pgm_chal_bytes.len() as i16;
-        let rtn_chal_bytes: Vec<u8> = self.rtn_chal.iter().flat_map(|s| s.as_bytes().to_vec()).collect();
+        let rtn_chal_bytes: Vec<u8> = self.rtn_chal.iter().flat_map(|s| {
+            let b = s.as_bytes(); let mut v = vec![b.len() as u8]; v.extend_from_slice(b); v
+        }).collect();
         rec_len += rtn_chal_bytes.len() as i16;
         [
             &rec_len.to_ne_bytes(),
