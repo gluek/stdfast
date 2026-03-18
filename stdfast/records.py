@@ -169,10 +169,10 @@ class MIR(BaseModel):
     setup_t: U32 = 0
     start_t: U32 = 0
     stat_num: U8 = 0
-    mode_cod: Char = " "
+    mode_cod: Literal["A", "C", "D", "E", "M", "P", "Q", " "] = " "
     rtst_cod: Char = " "
     prot_cod: Char = " "
-    burn_tim: U16 = 0
+    burn_tim: U16 = 65535
     cmod_cod: Char = " "
     lot_id: str = ""
     part_typ: str = ""
@@ -317,13 +317,13 @@ class TSR(BaseModel):
     """Test Synopsis Record (REC_TYP=10, REC_SUB=30)."""
     record_type: Literal["TSR"] = "TSR"
     global_offset: USize = 0
-    head_num: U8 = 255
-    site_num: U8 = 255
-    test_typ: Char = " "
+    head_num: U8 = 1
+    site_num: U8 = 1
+    test_typ: Literal[" ", "P", "F", "M"] = " "
     test_num: U32 = 0
-    exec_cnt: U32 = 0
-    fail_cnt: U32 = 0
-    alrm_cnt: U32 = 0
+    exec_cnt: U32 = 4294967295
+    fail_cnt: U32 = 4294967295
+    alrm_cnt: U32 = 4294967295
     test_nam: str = ""
     seq_name: str = ""
     test_lbl: str = ""
@@ -435,21 +435,21 @@ class PCR(BaseModel):
     head_num: U8 = 255
     site_num: U8 = 255
     part_cnt: U32 = 0
-    rtst_cnt: U32 = 0
-    abrt_cnt: U32 = 0
-    good_cnt: U32 = 0
-    func_cnt: U32 = 0
+    rtst_cnt: U32 = 4294967295
+    abrt_cnt: U32 = 4294967295
+    good_cnt: U32 = 4294967295
+    func_cnt: U32 = 4294967295
 
 
 class HBR(BaseModel):
     """Hardware Bin Record (REC_TYP=1, REC_SUB=40)."""
     record_type: Literal["HBR"] = "HBR"
     global_offset: USize = 0
-    head_num: U8 = 255
-    site_num: U8 = 255
+    head_num: U8 = 1
+    site_num: U8 = 1
     hbin_num: U16 = 0
     hbin_cnt: U32 = 0
-    hbin_pf: Char = " "
+    hbin_pf: Literal["P", "F", " "] = " "
     hbin_nam: str = ""
 
 
@@ -457,11 +457,11 @@ class SBR(BaseModel):
     """Software Bin Record (REC_TYP=1, REC_SUB=50)."""
     record_type: Literal["SBR"] = "SBR"
     global_offset: USize = 0
-    head_num: U8 = 255
-    site_num: U8 = 255
+    head_num: U8 = 1
+    site_num: U8 = 1
     sbin_num: U16 = 0
     sbin_cnt: U32 = 0
-    sbin_pf: Char = " "
+    sbin_pf: Literal["P", "F", " "] = " "
     sbin_nam: str = ""
 
 
@@ -469,7 +469,7 @@ class PMR(BaseModel):
     """Pin Map Record (REC_TYP=1, REC_SUB=60)."""
     record_type: Literal["PMR"] = "PMR"
     global_offset: USize = 0
-    pmr_indx: U16 = 0
+    pmr_indx: U16 = 1
     chan_typ: U16 = 0
     chan_nam: str = ""
     phy_nam: str = ""

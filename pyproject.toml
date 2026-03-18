@@ -4,5 +4,8 @@ build-backend = "maturin"
 
 [project]
 name = "stdfast"
-dependencies = ["polars", "pydantic>=2.12.5"]
 dynamic = ["version"]
+description="STDF parser and writer"
+dependencies = ["polars", "pydantic>=2.12.5"]
+license = "BSD-2"
+readme = "README.md"
