@@ -1,7 +1,7 @@
 from pydantic import TypeAdapter
 
 from .records import Record
-from .stdfast import *
+from .stdfast import *  # noqa: F403
 from .stdfast import get_raw_records as _get_raw_records
 
 _record_adapter: TypeAdapter[Record] = TypeAdapter(Record)
