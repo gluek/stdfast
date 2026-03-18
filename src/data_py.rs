@@ -38,7 +38,7 @@ struct PySTDF {
     /// The `DataFrame` containing the test results (corresponds to `TestData`)
     data: PyDataFrame,
     /// The `DataFrame` containing the test information metadata (corresponds to
-    /// `FullMergedTestInformation`)
+    /// `FullMergedTestInformation`) - TSR and PTR
     test_information: PyDataFrame,
     /// A dict containing the full test information metadata indexed by
     /// (`test_num`, `site_num`, `head_num`)
@@ -173,12 +173,35 @@ fn get_mir(fname: &str) -> PyResult<MIR> {
     Ok(mir)
 }
 
+/// get_raw_records(fname: str)
+/// --
+///
+/// Parse an STDF file and return a list of raw record dicts.
+///
+/// Each dict has a ``record_type`` key (e.g. ``"PTR"``) plus the record's fields,
+/// matching the Pydantic models in ``stdfast.records``.
+///
+/// # Example
+/// ```python
+///    import stdfast as sf
+///    from stdfast.records import Record
+///    from pydantic import TypeAdapter
+///    ta = TypeAdapter(Record)
+///    records = [ta.validate_python(r) for r in sf.get_raw_records("my.stdf")]
+/// ```
+#[pyfunction]
+fn get_raw_records(fname: &str) -> PyResult<Vec<Record>> {
+    let stdf = STDF::from_fname(fname)?;
+    Ok(stdf.records)
+}
+
 #[pymodule]
 fn stdfast(m: &Bound<'_, PyModule>) -> PyResult<()> {
     m.add_function(wrap_pyfunction!(get_mir, m)?)?;
     m.add_function(wrap_pyfunction!(parse_stdf, m)?)?;
     m.add_function(wrap_pyfunction!(get_rows, m)?)?;
     m.add_function(wrap_pyfunction!(get_raw_stdf, m)?)?;
+    m.add_function(wrap_pyfunction!(get_raw_records, m)?)?;
     m.add_function(wrap_pyfunction!(crate::write_py::write_stdf, m)?)?;
     Ok(())
 }

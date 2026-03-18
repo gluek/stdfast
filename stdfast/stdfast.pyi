@@ -2,6 +2,10 @@
 def get_mir(fname):
     ...
 
+def get_raw_records(fname: str) -> list:
+    """Return the parsed STDF records as a list of dicts, each with a ``record_type`` key."""
+    ...
+
 def get_raw_stdf(fname):
     """
     get_raw_stdf(fname: str)

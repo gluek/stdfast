@@ -13,7 +13,7 @@ The purpose of the library is to quickly and efficiently parse STDF files (which
 
 In rust
 
-```
+```rust
 use stdfast::data::STDF;
 use polars::prelude::*;
 
@@ -28,11 +28,29 @@ if let Ok(stdf) = STDF::from_fname(&fname, verbose) {
 
 Also contains Python bindings to this functionality, e.g.
 
-```
+## Parsing
+
+```python
    import stdfast as sf
    stdf = sf.parse_stdf("my_stdf.stdf")
    stdf['df']
-````
+```
+
+## Writing
+
+```python
+    import stdfast as sf
+    from stdfast.records import FAR, MIR, MRR, PIR, PTR, PRR
+    records = [
+        FAR(cpu_type=2, stdf_ver=4),
+        MIR(lot_id="LOT001", part_typ="MYPART, job_nam="MYJOB"),
+        PIR(head_num=1, site_num=1),
+        PTR(test_num=1000, head_num=1, site_num=1, result=1.23, test_txt="my_test"),
+        PRR(head_num=1, site_num=1, hard_bin=1, soft_bin=1, num_test=1),
+        MRR(),
+    ]
+    sf.write_stdf("output.stdf", records)
+```
 
 # Installation
 

@@ -2,7 +2,8 @@ use super::Records;
 use crate::records::RawRecord;
 use crate::util::*;
 pub use crate::util::GenData;
-use pyo3::prelude::IntoPyObject;
+use pyo3::prelude::*;
+use pyo3::types::PyDict;
 use std::{io, fmt};
 
 /// File Attributes Record
@@ -2415,7 +2416,7 @@ impl DTR {
 pub struct NotImplementedRecord {}
 
 /// An enum of all the concrete record types
-#[derive(Debug, Clone, IntoPyObject)]
+#[derive(Debug, Clone)]
 pub enum Record {
     FAR(FAR),
     ATR(ATR),
@@ -2469,5 +2470,27 @@ impl Record {
         }
         dispatch!(FAR, ATR, MIR, MRR, PCR, HBR, SBR, PMR, PGR, PLR, RDR,
                   SDR, WIR, WRR, WCR, PIR, PRR, TSR, PTR, MPR, FTR, BPS, EPS, GDR, DTR)
+    }
+}
+
+impl<'py> IntoPyObject<'py> for Record {
+    type Target = PyDict;
+    type Output = Bound<'py, PyDict>;
+    type Error = PyErr;
+
+    fn into_pyobject(self, py: Python<'py>) -> Result<Self::Output, Self::Error> {
+        macro_rules! tagged {
+            ($($variant:ident),*) => {
+                match self {
+                    $(Record::$variant(r) => {
+                        let dict = r.into_pyobject(py)?;
+                        dict.set_item("record_type", stringify!($variant))?;
+                        Ok(dict)
+                    },)*
+                }
+            };
+        }
+        tagged!(FAR, ATR, MIR, MRR, PCR, HBR, SBR, PMR, PGR, PLR, RDR,
+                SDR, WIR, WRR, WCR, PIR, PRR, TSR, PTR, MPR, FTR, BPS, EPS, GDR, DTR)
     }
 }

@@ -2,7 +2,8 @@
 #![allow(non_snake_case)]
 
 use std::fmt;
-use pyo3::IntoPyObject;
+use pyo3::prelude::*;
+use pyo3::types::{PyDict, PyList};
 
 /// Parse a uint8 and advance the `offset`
 pub fn U1(bytes: &[u8], offset: &mut usize) -> u8 {
@@ -165,7 +166,7 @@ pub fn kxCn(bytes: &[u8], num: usize, offset: &mut usize) -> Vec<String> {
     v
 }
 
-#[derive(Debug, Clone, IntoPyObject)]
+#[derive(Debug, Clone)]
 pub enum GenData {
     U1(u8),
     U2(u16),
@@ -179,6 +180,31 @@ pub enum GenData {
     Bn(Vec<u8>),
     Dn(Vec<u8>),
     N1(u8)
+}
+
+impl<'py> IntoPyObject<'py> for GenData {
+    type Target = PyDict;
+    type Output = Bound<'py, PyDict>;
+    type Error = PyErr;
+
+    fn into_pyobject(self, py: Python<'py>) -> Result<Self::Output, Self::Error> {
+        let dict = PyDict::new(py);
+        match self {
+            GenData::U1(v) => { dict.set_item("type", "U1")?; dict.set_item("value", v)?; }
+            GenData::U2(v) => { dict.set_item("type", "U2")?; dict.set_item("value", v)?; }
+            GenData::U4(v) => { dict.set_item("type", "U4")?; dict.set_item("value", v)?; }
+            GenData::I1(v) => { dict.set_item("type", "I1")?; dict.set_item("value", v)?; }
+            GenData::I2(v) => { dict.set_item("type", "I2")?; dict.set_item("value", v)?; }
+            GenData::I4(v) => { dict.set_item("type", "I4")?; dict.set_item("value", v)?; }
+            GenData::R4(v) => { dict.set_item("type", "R4")?; dict.set_item("value", v)?; }
+            GenData::R8(v) => { dict.set_item("type", "R8")?; dict.set_item("value", v)?; }
+            GenData::Cn(v) => { dict.set_item("type", "Cn")?; dict.set_item("value", v)?; }
+            GenData::Bn(v) => { dict.set_item("type", "Bn")?; dict.set_item("value", PyList::new(py, v)?)?; }
+            GenData::Dn(v) => { dict.set_item("type", "Dn")?; dict.set_item("value", PyList::new(py, v)?)?; }
+            GenData::N1(v) => { dict.set_item("type", "N1")?; dict.set_item("value", v)?; }
+        }
+        Ok(dict)
+    }
 }
 
 impl fmt::Display for GenData {
