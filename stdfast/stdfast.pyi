@@ -6,6 +6,15 @@ def get_raw_records(fname: str) -> list:
     """Return the parsed STDF records as a list of dicts, each with a ``record_type`` key."""
     ...
 
+class RawRecordsIter:
+    """Lazy iterator over raw STDF record dicts. See ``iter_raw_records()``."""
+    def __iter__(self) -> "RawRecordsIter": ...
+    def __next__(self) -> dict: ...
+
+def iter_raw_records(fname: str) -> RawRecordsIter:
+    """Return a lazy iterator yielding one raw record dict at a time."""
+    ...
+
 def get_raw_stdf(fname):
     """
     get_raw_stdf(fname: str)

@@ -12,7 +12,7 @@ use std::collections::HashMap;
 
 use crate::{
     data::{MasterInformation, Row, STDF, TestData, WaferInformation},
-    records::record_impl::*,
+    records::{record_impl::*, Records},
     test_information::TestInformation,
 };
 use pyo3::prelude::*;
@@ -195,6 +195,62 @@ fn get_raw_records(fname: &str) -> PyResult<Vec<Record>> {
     Ok(stdf.records)
 }
 
+/// A lazy iterator over raw STDF record dicts.
+///
+/// Returned by ``iter_raw_records()``. Each call to ``__next__`` reads, parses,
+/// and converts exactly one record from disk — only one record is live in memory
+/// at a time.
+#[pyclass]
+pub struct RawRecordsIter {
+    inner: Records,
+}
+
+#[pymethods]
+impl RawRecordsIter {
+    fn __iter__(slf: PyRef<'_, Self>) -> PyRef<'_, Self> {
+        slf
+    }
+
+    fn __next__(mut slf: PyRefMut<'_, Self>) -> PyResult<Option<PyObject>> {
+        let py = slf.py();
+        loop {
+            match slf.inner.next() {
+                None => return Ok(None),
+                Some(raw) => {
+                    if let Some(record) = raw.resolve() {
+                        let obj = record.into_pyobject(py)?.into_any().unbind();
+                        return Ok(Some(obj));
+                    }
+                    // Unknown record type — skip silently (same as get_raw_records)
+                }
+            }
+        }
+    }
+}
+
+/// iter_raw_records(fname: str)
+/// --
+///
+/// Return a lazy iterator over raw STDF record dicts.
+///
+/// Unlike ``get_raw_records()``, only one record is held in memory at a time,
+/// making this suitable for files with millions of records.
+///
+/// Each yielded ``dict`` has a ``record_type`` key plus the record's fields.
+///
+/// # Example
+/// ```python
+///    import stdfast as sf
+///    for record in sf.iter_raw_records("my.stdf"):
+///        if record["record_type"] == "PTR":
+///            print(record)
+/// ```
+#[pyfunction]
+fn iter_raw_records(fname: &str) -> PyResult<RawRecordsIter> {
+    let inner = Records::new(fname)?;
+    Ok(RawRecordsIter { inner })
+}
+
 #[pymodule]
 fn stdfast(m: &Bound<'_, PyModule>) -> PyResult<()> {
     m.add_function(wrap_pyfunction!(get_mir, m)?)?;
@@ -202,7 +258,9 @@ fn stdfast(m: &Bound<'_, PyModule>) -> PyResult<()> {
     m.add_function(wrap_pyfunction!(get_rows, m)?)?;
     m.add_function(wrap_pyfunction!(get_raw_stdf, m)?)?;
     m.add_function(wrap_pyfunction!(get_raw_records, m)?)?;
+    m.add_function(wrap_pyfunction!(iter_raw_records, m)?)?;
     m.add_function(wrap_pyfunction!(crate::write_py::write_stdf, m)?)?;
     m.add_class::<crate::write_py::StdfWriter>()?;
+    m.add_class::<RawRecordsIter>()?;
     Ok(())
 }
