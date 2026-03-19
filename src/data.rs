@@ -8,6 +8,7 @@ use polars::prelude::*;
 use pyo3::IntoPyObject;
 use serde::Serialize;
 
+use crate::record_types::RecordType;
 use crate::records::{Records, record_impl::*};
 use crate::{
     test_information::{FullMergedTestInformation, FullTestInformation, TestType},
@@ -103,8 +104,7 @@ pub struct TestData {
     pub index_lookup: HashMap<u32, usize>,
     /// The list of test results contained in `Row`s
     pub data: Vec<Row>,
-    /// For multi-pin tests,text-align: ->style="caret- where the="caret-colorder matches that of
-    /// in the test results
+    /// For multi-pin tests in the test results
     pub mpr_index_lookup: HashMap<u32, Vec<u16>>,
     // The temporary rows indexed by (`test_num`, `site_num`, `head_num`)
     temp_rows: HashMap<(u8, u8), Row>,
@@ -129,7 +129,8 @@ impl TestData {
     pub fn new(full_test_information: FullTestInformation) -> Self {
         let test_information = full_test_information.merge();
 
-        let mut index_lookup = HashMap::new();
+        let n_tests = test_information.test_infos.len();
+        let mut index_lookup = HashMap::with_capacity(n_tests);
         let mut reverse_lookup_para = HashMap::new();
         let mut reverse_lookup_func = HashMap::new();
         let mut reverse_lookup_mult = HashMap::new();
@@ -353,28 +354,24 @@ impl TestData {
         let records = Records::new(&fname)?;
 
         for record in records {
-            if let Some(resolved) = record.resolve() {
-                if let Record::WIR(ref wir) = resolved {
-                    test_data.new_wafer(wir);
+            match record.rtype {
+                RecordType::WIR | RecordType::PIR | RecordType::PTR |
+                RecordType::FTR | RecordType::MPR | RecordType::PRR |
+                RecordType::WRR => {
+                    if let Some(resolved) = record.resolve() {
+                        match resolved {
+                            Record::WIR(ref wir) => test_data.new_wafer(wir),
+                            Record::PIR(ref pir) => test_data.new_part(pir),
+                            Record::PTR(ref ptr) => test_data.add_data_ptr(ptr),
+                            Record::FTR(ref ftr) => test_data.add_data_ftr(ftr),
+                            Record::MPR(ref mpr) => test_data.add_data_mpr(mpr),
+                            Record::PRR(ref prr) => test_data.finish_part(prr),
+                            Record::WRR(_) => test_data.close_wafer(),
+                            _ => {}
+                        }
+                    }
                 }
-                if let Record::PIR(ref pir) = resolved {
-                    test_data.new_part(pir);
-                }
-                if let Record::PTR(ref ptr) = resolved {
-                    test_data.add_data_ptr(ptr);
-                }
-                if let Record::FTR(ref ftr) = resolved {
-                    test_data.add_data_ftr(ftr);
-                }
-                if let Record::MPR(ref mpr) = resolved {
-                    test_data.add_data_mpr(mpr);
-                }
-                if let Record::PRR(ref prr) = resolved {
-                    test_data.finish_part(prr);
-                }
-                if let Record::WRR(ref _wrr) = resolved {
-                    test_data.close_wafer();
-                }
+                _ => {} // skip resolving unused record types
             }
         }
         test_data.normalize_multipin_results();
@@ -385,18 +382,19 @@ impl TestData {
 /// Converts a `&TestData` into a `DataFrame` containing a tabular listing of all test results
 impl Into<DataFrame> for &TestData {
     fn into(self) -> DataFrame {
-        let mut part_ids: Vec<String> = Vec::new();
-        let mut part_txts: Vec<String> = Vec::new();
-        let mut wafer_ids: Vec<String> = Vec::new();
-        let mut x_coords: Vec<i16> = Vec::new();
-        let mut y_coords: Vec<i16> = Vec::new();
-        let mut head_nums: Vec<u8> = Vec::new();
-        let mut site_nums: Vec<u8> = Vec::new();
-        let mut sbins: Vec<u16> = Vec::new();
-        let mut hbins: Vec<u16> = Vec::new();
-        let mut vecs_para: HashMap<u32, Vec<f32>> = HashMap::new(); // hashmap to later sort by key
-        let mut vecs_func: HashMap<u32, Vec<bool>> = HashMap::new();
-        let mut vecs_mult: HashMap<u32, Vec<AnyValue>> = HashMap::new();
+        let nrows = self.data.len();
+        let mut part_ids: Vec<String> = Vec::with_capacity(nrows);
+        let mut part_txts: Vec<String> = Vec::with_capacity(nrows);
+        let mut wafer_ids: Vec<String> = Vec::with_capacity(nrows);
+        let mut x_coords: Vec<i16> = Vec::with_capacity(nrows);
+        let mut y_coords: Vec<i16> = Vec::with_capacity(nrows);
+        let mut head_nums: Vec<u8> = Vec::with_capacity(nrows);
+        let mut site_nums: Vec<u8> = Vec::with_capacity(nrows);
+        let mut sbins: Vec<u16> = Vec::with_capacity(nrows);
+        let mut hbins: Vec<u16> = Vec::with_capacity(nrows);
+        let mut vecs_para: HashMap<u32, Vec<f32>> = HashMap::with_capacity(self.n_para);
+        let mut vecs_func: HashMap<u32, Vec<bool>> = HashMap::with_capacity(self.n_func);
+        let mut vecs_mult: HashMap<u32, Vec<AnyValue>> = HashMap::with_capacity(self.n_mult);
         let ncols_para = self.n_para;
         let ncols_func = self.n_func;
         let ncols_mult = self.n_mult;
@@ -414,19 +412,19 @@ impl Into<DataFrame> for &TestData {
                 let test_num = self.reverse_lookup_para.get(&i).unwrap();
                 vecs_para
                     .entry(*test_num)
-                    .or_insert(Vec::new())
+                    .or_insert_with(|| Vec::with_capacity(nrows))
                     .push(row.results_parametric[i]);
             }
             for i in 0..ncols_func {
                 let test_num = self.reverse_lookup_func.get(&i).unwrap();
                 vecs_func
                     .entry(*test_num)
-                    .or_insert(Vec::new())
+                    .or_insert_with(|| Vec::with_capacity(nrows))
                     .push(row.results_functional[i]);
             }
             for i in 0..ncols_mult {
                 let test_num = self.reverse_lookup_mult.get(&i).unwrap();
-                vecs_mult.entry(*test_num).or_insert(Vec::new()).push({
+                vecs_mult.entry(*test_num).or_insert_with(|| Vec::with_capacity(nrows)).push({
                     let results: Series = row.results_multi_pin[i].clone().into_iter().collect();
                     let len = results.len();
                     AnyValue::Array(results, len)

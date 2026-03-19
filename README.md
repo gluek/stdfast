@@ -58,7 +58,7 @@ To install the rust CLI binary:
 
 ```cargo install stdfast```
 
-To add the `stdfast` library to a rust project, add to the `Cargol.toml`:
+To add the `stdfast` library to a rust project, add to the `Cargo.toml`:
 
 ```
 [dependencies]

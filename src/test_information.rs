@@ -1,3 +1,4 @@
+use crate::record_types::RecordType;
 use crate::records::RecordSummary;
 use crate::records::Records;
 use crate::records::record_impl::PTR;
@@ -306,32 +307,33 @@ impl FullTestInformation {
         let mut test_info = Self::new();
 
         for record in records {
-            if let Some(resolved) = record.resolve() {
-                let header = &record.header;
-
-                if verbose {
+            if verbose {
+                if let Some(resolved) = record.resolve() {
+                    let header = &record.header;
                     println!(
                         "{}.{} (0x{:x} @ 0x{:x}): {:?}",
                         header.rec_typ, header.rec_sub, header.rec_len, record.offset, record.rtype
                     );
-                }
-                if let Record::TSR(ref tsr) = resolved {
-                    test_info.add_from_tsr(&tsr);
-                }
-                if let Record::PIR(_) = resolved {
-                    continue;
-                }
-                if let Record::FTR(_) = resolved {
-                    continue;
-                }
-                if let Record::PTR(ref ptr) = resolved {
-                    test_info.add_from_ptr(&ptr);
-                }
-                //if let Record::PRR(_) = resolved {
-                //    continue;
-                //}
-                if verbose {
+                    match resolved {
+                        Record::TSR(ref tsr) => test_info.add_from_tsr(tsr),
+                        Record::PTR(ref ptr) => test_info.add_from_ptr(ptr),
+                        Record::PIR(_) | Record::FTR(_) => continue,
+                        _ => {}
+                    }
                     println!("{resolved:#?}");
+                }
+            } else {
+                match record.rtype {
+                    RecordType::TSR | RecordType::PTR => {
+                        if let Some(resolved) = record.resolve() {
+                            match resolved {
+                                Record::TSR(ref tsr) => test_info.add_from_tsr(tsr),
+                                Record::PTR(ref ptr) => test_info.add_from_ptr(ptr),
+                                _ => {}
+                            }
+                        }
+                    }
+                    _ => {}
                 }
             }
         }
@@ -364,32 +366,33 @@ impl FullTestInformation {
 
         for record in records {
             summary.add(&record);
-            if let Some(resolved) = record.resolve() {
-                let header = &record.header;
-
-                if verbose {
+            if verbose {
+                if let Some(resolved) = record.resolve() {
+                    let header = &record.header;
                     println!(
                         "{}.{} (0x{:x} @ 0x{:x}): {:?}",
                         header.rec_typ, header.rec_sub, header.rec_len, record.offset, record.rtype
                     );
-                }
-                if let Record::TSR(ref tsr) = resolved {
-                    test_info.add_from_tsr(&tsr);
-                }
-                if let Record::PIR(_) = resolved {
-                    continue;
-                }
-                if let Record::FTR(_) = resolved {
-                    continue;
-                }
-                if let Record::PTR(ref ptr) = resolved {
-                    test_info.add_from_ptr(&ptr);
-                }
-                //if let Record::PRR(_) = resolved {
-                //    continue;
-                //}
-                if verbose {
+                    match resolved {
+                        Record::TSR(ref tsr) => test_info.add_from_tsr(tsr),
+                        Record::PTR(ref ptr) => test_info.add_from_ptr(ptr),
+                        Record::PIR(_) | Record::FTR(_) => continue,
+                        _ => {}
+                    }
                     println!("{resolved:#?}");
+                }
+            } else {
+                match record.rtype {
+                    RecordType::TSR | RecordType::PTR => {
+                        if let Some(resolved) = record.resolve() {
+                            match resolved {
+                                Record::TSR(ref tsr) => test_info.add_from_tsr(tsr),
+                                Record::PTR(ref ptr) => test_info.add_from_ptr(ptr),
+                                _ => {}
+                            }
+                        }
+                    }
+                    _ => {}
                 }
             }
         }
@@ -504,25 +507,25 @@ impl FullMergedTestInformation {
         self.test_infos
             .values()
             .filter(|&mti| mti.test_type == test_type)
-            .collect::<Vec<_>>()
-            .len()
+            .count()
     }
 }
 
 /// Make a DataFrame containing the info in a `FullMergedTestInformation`
 impl Into<DataFrame> for &FullMergedTestInformation {
     fn into(self) -> DataFrame {
-        let mut test_nums: Vec<u32> = Vec::new();
-        let mut test_types: Vec<String> = Vec::new();
-        let mut execution_counts: Vec<u32> = Vec::new();
-        let mut test_names: Vec<String> = Vec::new();
-        let mut sequence_names: Vec<String> = Vec::new();
-        let mut test_labels: Vec<String> = Vec::new();
-        let mut test_times: Vec<f32> = Vec::new();
-        let mut test_texts: Vec<String> = Vec::new();
-        let mut low_limits: Vec<f32> = Vec::new();
-        let mut high_limits: Vec<f32> = Vec::new();
-        let mut unitss: Vec<String> = Vec::new();
+        let n = self.test_infos.len();
+        let mut test_nums: Vec<u32> = Vec::with_capacity(n);
+        let mut test_types: Vec<String> = Vec::with_capacity(n);
+        let mut execution_counts: Vec<u32> = Vec::with_capacity(n);
+        let mut test_names: Vec<String> = Vec::with_capacity(n);
+        let mut sequence_names: Vec<String> = Vec::with_capacity(n);
+        let mut test_labels: Vec<String> = Vec::with_capacity(n);
+        let mut test_times: Vec<f32> = Vec::with_capacity(n);
+        let mut test_texts: Vec<String> = Vec::with_capacity(n);
+        let mut low_limits: Vec<f32> = Vec::with_capacity(n);
+        let mut high_limits: Vec<f32> = Vec::with_capacity(n);
+        let mut unitss: Vec<String> = Vec::with_capacity(n);
 
         for (tnum, mti) in &self.test_infos {
             test_nums.push(*tnum);

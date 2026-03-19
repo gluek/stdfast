@@ -6,6 +6,7 @@ use pyo3::prelude::*;
 use pyo3::types::{PyDict, PyList};
 
 /// Parse a uint8 and advance the `offset`
+#[inline]
 pub fn U1(bytes: &[u8], offset: &mut usize) -> u8 {
     let x = bytes[*offset];
     *offset += 1;
@@ -13,6 +14,7 @@ pub fn U1(bytes: &[u8], offset: &mut usize) -> u8 {
 }
 
 /// Parse a uint16 and advance the `offset`
+#[inline]
 pub fn U2(bytes: &[u8], offset: &mut usize) -> u16 {
     let x = u16::from_le_bytes(bytes[*offset..*offset + 2].try_into().unwrap());
     *offset += 2;
@@ -20,6 +22,7 @@ pub fn U2(bytes: &[u8], offset: &mut usize) -> u16 {
 }
 
 /// Parse a uint32 and advance the `offset`
+#[inline]
 pub fn U4(bytes: &[u8], offset: &mut usize) -> u32 {
     let x = u32::from_le_bytes(bytes[*offset..*offset + 4].try_into().unwrap());
     *offset += 4;
@@ -27,6 +30,7 @@ pub fn U4(bytes: &[u8], offset: &mut usize) -> u32 {
 }
 
 /// Parse a int8 and advance the `offset`
+#[inline]
 pub fn I1(bytes: &[u8], offset: &mut usize) -> i8 {
     let x = bytes[*offset] as i8;
     *offset += 1;
@@ -34,6 +38,7 @@ pub fn I1(bytes: &[u8], offset: &mut usize) -> i8 {
 }
 
 /// Parse a int16 and advance the `offset`
+#[inline]
 pub fn I2(bytes: &[u8], offset: &mut usize) -> i16 {
     let x = i16::from_le_bytes(bytes[*offset..*offset + 2].try_into().unwrap());
     *offset += 2;
@@ -41,6 +46,7 @@ pub fn I2(bytes: &[u8], offset: &mut usize) -> i16 {
 }
 
 /// Parse a int32 and advance the `offset`
+#[inline]
 pub fn I4(bytes: &[u8], offset: &mut usize) -> i32 {
     let x = i32::from_le_bytes(bytes[*offset..*offset + 4].try_into().unwrap());
     *offset += 4;
@@ -48,6 +54,7 @@ pub fn I4(bytes: &[u8], offset: &mut usize) -> i32 {
 }
 
 /// Parse a 32-bit float and advance the `offset`
+#[inline]
 pub fn R4(bytes: &[u8], offset: &mut usize) -> f32 {
     let x = f32::from_le_bytes(bytes[*offset..*offset + 4].try_into().unwrap());
     *offset += 4;
@@ -55,6 +62,7 @@ pub fn R4(bytes: &[u8], offset: &mut usize) -> f32 {
 }
 
 /// Parse a 64-bit float and advance the `offset`
+#[inline]
 pub fn R8(bytes: &[u8], offset: &mut usize) -> f64 {
     let x = f64::from_le_bytes(bytes[*offset..*offset + 8].try_into().unwrap());
     *offset += 8;
@@ -62,6 +70,7 @@ pub fn R8(bytes: &[u8], offset: &mut usize) -> f64 {
 }
 
 /// Parse a single 8-bit character and advance the `offset`
+#[inline]
 pub fn C1(bytes: &[u8], offset: &mut usize) -> char {
     let x = char::from_u32(bytes[*offset] as u32)
         .expect("Failed to parse C1 from {offset} from\n{bytes:#?}");
@@ -70,6 +79,7 @@ pub fn C1(bytes: &[u8], offset: &mut usize) -> char {
 }
 
 /// Parse a string and advance the `offset`
+#[inline]
 pub fn Cn(bytes: &[u8], offset: &mut usize) -> String {
     let length = bytes[*offset] as usize;
     let result = String::from_utf8(bytes[*offset + 1..*offset + 1 + length].to_vec());
@@ -82,16 +92,18 @@ pub fn Cn(bytes: &[u8], offset: &mut usize) -> String {
 }
 
 /// Convert string to bytes and increase rec_len
-pub fn CnToBytes(content: String, rec_len: &mut i16) -> Vec<u8>{
-    let mut content_bytes = content.into_bytes();
+pub fn CnToBytes(content: &str, rec_len: &mut u16) -> Vec<u8> {
+    let content_bytes = content.as_bytes();
     let length = u8::try_from(content_bytes.len()).unwrap();
-    *rec_len += i16::from(length + 1);
-    let mut output = vec![length];
-    output.append(&mut content_bytes);
+    *rec_len += u16::from(length) + 1;
+    let mut output = Vec::with_capacity(1 + content_bytes.len());
+    output.push(length);
+    output.extend_from_slice(content_bytes);
     output
 }
 
 /// Parse an array of bits and advance the `offset`
+#[inline]
 pub fn Bn(bytes: &[u8], offset: &mut usize) -> Vec<u8> {
     let length = bytes[*offset] as usize;
     let x = bytes[*offset + 1..*offset + 1 + length].to_vec();
@@ -100,6 +112,7 @@ pub fn Bn(bytes: &[u8], offset: &mut usize) -> Vec<u8> {
 }
 
 /// Parse an array of uint8 and advance the offset
+#[inline]
 pub fn Dn(bytes: &[u8], offset: &mut usize) -> Vec<u8> {
     let nbits = u16::from_le_bytes(bytes[*offset..*offset + 2].try_into().unwrap()) as usize;
     let length = nbits.div_ceil(8);
