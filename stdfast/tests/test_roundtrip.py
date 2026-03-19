@@ -277,3 +277,129 @@ class TestStdfWriterBytesMatchBatch:
         w.close()
         with pytest.raises(OSError):
             w.write_record(_make_records()[0])
+
+
+# ---------------------------------------------------------------------------
+# Shared fixture for iterator tests
+# ---------------------------------------------------------------------------
+
+
+@pytest.fixture
+def iter_stdf_file(tmp_path):
+    """Write a known record set to disk and return the file path."""
+    out_file = str(tmp_path / "iter_test.stdf")
+    sf.write_stdf(out_file, _make_records())
+    return out_file
+
+
+# ---------------------------------------------------------------------------
+# iter_raw_records tests
+# ---------------------------------------------------------------------------
+
+
+class TestIterRawRecords:
+    def test_returns_iterator(self, iter_stdf_file):
+        it = sf.iter_raw_records(iter_stdf_file)
+        assert hasattr(it, "__iter__")
+        assert hasattr(it, "__next__")
+
+    def test_iter_is_self(self, iter_stdf_file):
+        it = sf.iter_raw_records(iter_stdf_file)
+        assert iter(it) is it
+
+    def test_yields_dicts(self, iter_stdf_file):
+        it = sf.iter_raw_records(iter_stdf_file)
+        record = next(it)
+        assert isinstance(record, dict)
+
+    def test_first_record_has_record_type_key(self, iter_stdf_file):
+        record = next(sf.iter_raw_records(iter_stdf_file))
+        assert "record_type" in record
+
+    def test_first_record_is_far(self, iter_stdf_file):
+        record = next(sf.iter_raw_records(iter_stdf_file))
+        assert record["record_type"] == "FAR"
+
+    def test_count_matches_get_raw_records(self, iter_stdf_file):
+        eager = sf.get_raw_records(iter_stdf_file)
+        lazy = list(sf.iter_raw_records(iter_stdf_file))
+        assert len(lazy) == len(eager)
+
+    def test_content_matches_get_raw_records(self, iter_stdf_file):
+        # iter_raw_records applies _bytes_to_list; normalise the eager side too
+        from stdfast import _bytes_to_list
+
+        eager = [_bytes_to_list(r) for r in sf.get_raw_records(iter_stdf_file)]
+        lazy = list(sf.iter_raw_records(iter_stdf_file))
+        assert lazy == eager
+
+    def test_ptr_record_has_expected_fields(self, iter_stdf_file):
+        ptrs = [
+            r for r in sf.iter_raw_records(iter_stdf_file) if r["record_type"] == "PTR"
+        ]
+        assert len(ptrs) == 2
+        ptr = next(p for p in ptrs if p["test_num"] == 1000)
+        assert math.isclose(ptr["result"], 1.5, rel_tol=1e-5)
+        assert ptr["test_txt"] == "vdd_test"
+
+    def test_stopiteration_when_exhausted(self, iter_stdf_file):
+        it = sf.iter_raw_records(iter_stdf_file)
+        list(it)  # exhaust
+        with pytest.raises(StopIteration):
+            next(it)
+
+    def test_file_not_found_raises(self, tmp_path):
+        # iter_raw_records is a generator; the file is opened on first next()
+        with pytest.raises(OSError):
+            next(sf.iter_raw_records(str(tmp_path / "nonexistent.stdf")))
+
+
+# ---------------------------------------------------------------------------
+# iter_records tests (Pydantic-validated models)
+# ---------------------------------------------------------------------------
+
+
+class TestIterRecords:
+    def test_returns_iterator(self, iter_stdf_file):
+        it = sf.iter_records(iter_stdf_file)
+        assert hasattr(it, "__iter__")
+        assert hasattr(it, "__next__")
+
+    def test_yields_pydantic_models(self, iter_stdf_file):
+        from stdfast.records import FAR as PydanticFAR
+
+        record = next(sf.iter_records(iter_stdf_file))
+        assert isinstance(record, PydanticFAR)
+
+    def test_first_record_is_far(self, iter_stdf_file):
+        record = next(sf.iter_records(iter_stdf_file))
+        assert record.record_type == "FAR"
+
+    def test_count_matches_get_records(self, iter_stdf_file):
+        eager = sf.get_records(iter_stdf_file)
+        lazy = list(sf.iter_records(iter_stdf_file))
+        assert len(lazy) == len(eager)
+
+    def test_content_matches_get_records(self, iter_stdf_file):
+        eager = sf.get_records(iter_stdf_file)
+        lazy = list(sf.iter_records(iter_stdf_file))
+        assert lazy == eager
+
+    def test_ptr_fields_accessible_as_attributes(self, iter_stdf_file):
+        ptrs = [r for r in sf.iter_records(iter_stdf_file) if r.record_type == "PTR"]
+        assert len(ptrs) == 2
+        ptr = next(p for p in ptrs if p.test_num == 1000)  # ty:ignore[unresolved-attribute]
+        assert isinstance(ptr, PTR)
+        assert math.isclose(ptr.result, 1.5, rel_tol=1e-5)
+        assert ptr.test_txt == "vdd_test"
+        assert ptr.units == "V"
+
+    def test_stopiteration_when_exhausted(self, iter_stdf_file):
+        it = sf.iter_records(iter_stdf_file)
+        list(it)  # exhaust
+        with pytest.raises(StopIteration):
+            next(it)
+
+    def test_file_not_found_raises(self, tmp_path):
+        with pytest.raises(OSError):
+            next(sf.iter_records(str(tmp_path / "nonexistent.stdf")))

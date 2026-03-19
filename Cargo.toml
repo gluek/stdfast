@@ -1,6 +1,6 @@
 [package]
 name = "stdfast"
-version = "0.1.0"
+version = "0.2.0"
 edition = "2024"
 description = "Parsing of STDF file format to DataFrame with Python bindings"
 license = "BSD-2"
