@@ -19,6 +19,10 @@
 //! sf.write_stdf("output.stdf", records)
 //! ```
 
+use std::fs::File;
+use std::io::{BufWriter, Write};
+use std::sync::Mutex;
+
 use pyo3::prelude::*;
 
 use crate::{
@@ -511,6 +515,112 @@ impl<'py> FromPyObject<'py> for DTR {
 }
 
 // ---------------------------------------------------------------------------
+// Private helper: serialize a single record to any writer
+// ---------------------------------------------------------------------------
+
+fn write_one(record: &Bound<'_, PyAny>, w: &mut impl Write) -> PyResult<()> {
+    let record_type: String = record.getattr("record_type")?.extract()?;
+    let record_bytes: Vec<u8> = match record_type.as_str() {
+        "FAR" => { let r: FAR = record.extract()?; r.bytes() }
+        "ATR" => { let r: ATR = record.extract()?; r.bytes() }
+        "MIR" => { let r: MIR = record.extract()?; r.bytes() }
+        "MRR" => { let r: MRR = record.extract()?; r.bytes() }
+        "SDR" => { let r: SDR = record.extract()?; r.bytes() }
+        "WIR" => { let r: WIR = record.extract()?; r.bytes() }
+        "WRR" => { let r: WRR = record.extract()?; r.bytes() }
+        "WCR" => { let r: WCR = record.extract()?; r.bytes() }
+        "PIR" => { let r: PIR = record.extract()?; r.bytes() }
+        "PRR" => { let r: PRR = record.extract()?; r.bytes() }
+        "PCR" => { let r: PCR = record.extract()?; r.bytes() }
+        "HBR" => { let r: HBR = record.extract()?; r.bytes() }
+        "SBR" => { let r: SBR = record.extract()?; r.bytes() }
+        "PMR" => { let r: PMR = record.extract()?; r.bytes() }
+        "PGR" => { let r: PGR = record.extract()?; r.bytes() }
+        "PLR" => { let r: PLR = record.extract()?; r.bytes() }
+        "RDR" => { let r: RDR = record.extract()?; r.bytes() }
+        "TSR" => { let r: TSR = record.extract()?; r.bytes() }
+        "PTR" => { let r: PTR = record.extract()?; r.bytes() }
+        "MPR" => { let r: MPR = record.extract()?; r.bytes() }
+        "FTR" => { let r: FTR = record.extract()?; r.bytes() }
+        "BPS" => { let r: BPS = record.extract()?; r.bytes() }
+        "EPS" => { let r: EPS = record.extract()?; r.bytes() }
+        "GDR" => { let r: GDR = record.extract()?; r.bytes() }
+        "DTR" => { let r: DTR = record.extract()?; r.bytes() }
+        other => {
+            return Err(pyo3::exceptions::PyValueError::new_err(format!(
+                "Unknown record_type: '{other}'"
+            )));
+        }
+    };
+    w.write_all(&record_bytes)
+        .map_err(|e| pyo3::exceptions::PyIOError::new_err(e.to_string()))
+}
+
+// ---------------------------------------------------------------------------
+// StdfWriter — streaming STDF writer exposed as a Python class
+// ---------------------------------------------------------------------------
+
+/// A streaming STDF file writer.
+///
+/// Open with `StdfWriter(fname)` or use as a context manager:
+/// ```python
+/// with sf.StdfWriter("out.stdf") as w:
+///     w.write_record(FAR(cpu_type=2, stdf_ver=4))
+///     w.write_record(MRR())
+/// ```
+#[pyclass]
+pub struct StdfWriter {
+    inner: Mutex<Option<BufWriter<File>>>,
+}
+
+#[pymethods]
+impl StdfWriter {
+    #[new]
+    pub fn open(fname: &str) -> PyResult<Self> {
+        let file = File::create(fname)
+            .map_err(|e| pyo3::exceptions::PyIOError::new_err(e.to_string()))?;
+        Ok(Self {
+            inner: Mutex::new(Some(BufWriter::new(file))),
+        })
+    }
+
+    /// Write a single STDF record object to the file.
+    pub fn write_record(&self, record: Bound<'_, PyAny>) -> PyResult<()> {
+        let mut guard = self.inner.lock().unwrap();
+        match guard.as_mut() {
+            None => Err(pyo3::exceptions::PyIOError::new_err(
+                "StdfWriter is already closed",
+            )),
+            Some(w) => write_one(&record, w),
+        }
+    }
+
+    /// Flush and close the underlying file. Idempotent.
+    pub fn close(&self) -> PyResult<()> {
+        let mut guard = self.inner.lock().unwrap();
+        if let Some(mut w) = guard.take() {
+            w.flush()
+                .map_err(|e| pyo3::exceptions::PyIOError::new_err(e.to_string()))?;
+        }
+        Ok(())
+    }
+
+    pub fn __enter__(slf: PyRef<'_, Self>) -> PyRef<'_, Self> {
+        slf
+    }
+
+    pub fn __exit__(
+        &self,
+        _exc_type: Bound<'_, PyAny>,
+        _exc_val: Bound<'_, PyAny>,
+        _exc_tb: Bound<'_, PyAny>,
+    ) -> PyResult<bool> {
+        self.close()?;
+        Ok(false)
+    }
+}
+
+// ---------------------------------------------------------------------------
 // write_stdf Python function
 // ---------------------------------------------------------------------------
 
@@ -541,45 +651,21 @@ impl<'py> FromPyObject<'py> for DTR {
 /// ```
 #[pyfunction]
 pub fn write_stdf(fname: &str, records: Vec<Bound<'_, PyAny>>) -> PyResult<()> {
-    let mut bytes: Vec<u8> = Vec::new();
+    let file = std::fs::File::create(fname)
+        .map_err(|e| pyo3::exceptions::PyIOError::new_err(e.to_string()))?;
+    let mut writer = BufWriter::new(file);
 
-    for record in &records {
-        let record_type: String = record.getattr("record_type")?.extract()?;
-        let record_bytes: Vec<u8> = match record_type.as_str() {
-            "FAR" => { let r: FAR = record.extract()?; r.bytes() }
-            "ATR" => { let r: ATR = record.extract()?; r.bytes() }
-            "MIR" => { let r: MIR = record.extract()?; r.bytes() }
-            "MRR" => { let r: MRR = record.extract()?; r.bytes() }
-            "SDR" => { let r: SDR = record.extract()?; r.bytes() }
-            "WIR" => { let r: WIR = record.extract()?; r.bytes() }
-            "WRR" => { let r: WRR = record.extract()?; r.bytes() }
-            "WCR" => { let r: WCR = record.extract()?; r.bytes() }
-            "PIR" => { let r: PIR = record.extract()?; r.bytes() }
-            "PRR" => { let r: PRR = record.extract()?; r.bytes() }
-            "PCR" => { let r: PCR = record.extract()?; r.bytes() }
-            "HBR" => { let r: HBR = record.extract()?; r.bytes() }
-            "SBR" => { let r: SBR = record.extract()?; r.bytes() }
-            "PMR" => { let r: PMR = record.extract()?; r.bytes() }
-            "PGR" => { let r: PGR = record.extract()?; r.bytes() }
-            "PLR" => { let r: PLR = record.extract()?; r.bytes() }
-            "RDR" => { let r: RDR = record.extract()?; r.bytes() }
-            "TSR" => { let r: TSR = record.extract()?; r.bytes() }
-            "PTR" => { let r: PTR = record.extract()?; r.bytes() }
-            "MPR" => { let r: MPR = record.extract()?; r.bytes() }
-            "FTR" => { let r: FTR = record.extract()?; r.bytes() }
-            "BPS" => { let r: BPS = record.extract()?; r.bytes() }
-            "EPS" => { let r: EPS = record.extract()?; r.bytes() }
-            "GDR" => { let r: GDR = record.extract()?; r.bytes() }
-            "DTR" => { let r: DTR = record.extract()?; r.bytes() }
-            other => {
-                return Err(pyo3::exceptions::PyValueError::new_err(format!(
-                    "Unknown record_type: '{other}'"
-                )));
-            }
-        };
-        bytes.extend(record_bytes);
+    let result: PyResult<()> = (|| {
+        for record in &records {
+            write_one(record, &mut writer)?;
+        }
+        Ok(())
+    })();
+
+    if result.is_err() {
+        drop(writer);
+        let _ = std::fs::remove_file(fname);
     }
 
-    std::fs::write(fname, bytes)?;
-    Ok(())
+    result
 }

@@ -89,6 +89,22 @@ def parse_stdf(fname):
     ```
     """
 
+class StdfWriter:
+    """Streaming STDF file writer.
+
+    Can be used as a context manager::
+
+        with sf.StdfWriter("out.stdf") as w:
+            w.write_record(FAR(cpu_type=2, stdf_ver=4))
+            w.write_record(MRR())
+    """
+
+    def __init__(self, fname: str) -> None: ...
+    def write_record(self, record) -> None: ...
+    def close(self) -> None: ...
+    def __enter__(self) -> "StdfWriter": ...
+    def __exit__(self, *args) -> bool: ...
+
 def write_stdf(fname, records):
     """
     write_stdf(fname: str, records: list)

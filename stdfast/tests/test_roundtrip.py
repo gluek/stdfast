@@ -84,6 +84,17 @@ def roundtrip_stdf(tmp_path):
     return result
 
 
+@pytest.fixture
+def roundtrip_stdf_writer(tmp_path):
+    """Same as roundtrip_stdf but uses StdfWriter instead of write_stdf."""
+    out_file = str(tmp_path / "roundtrip_writer.stdf")
+    with sf.StdfWriter(out_file) as w:
+        for record in _make_records():
+            w.write_record(record)
+    result = sf.parse_stdf(out_file)
+    return result
+
+
 # ---------------------------------------------------------------------------
 # Master information (MIR fields)
 # ---------------------------------------------------------------------------
@@ -176,3 +187,93 @@ class TestInformationFrame:
     def test_test_2000_units(self, roundtrip_stdf):
         row = self._row_for(roundtrip_stdf["test_information"], 2000)
         assert row["units"] == "mA"
+
+
+# ---------------------------------------------------------------------------
+# StdfWriter roundtrip (mirrors the tests above)
+# ---------------------------------------------------------------------------
+
+
+class TestStdfWriterRoundtrip:
+    """Verify StdfWriter produces parse-equivalent output to write_stdf."""
+
+    # Master information
+    def test_lot_id(self, roundtrip_stdf_writer):
+        assert roundtrip_stdf_writer["master_information"]["lot_id"] == "LOT001"
+
+    def test_part_typ(self, roundtrip_stdf_writer):
+        assert roundtrip_stdf_writer["master_information"]["part_typ"] == "MYPART"
+
+    def test_job_nam(self, roundtrip_stdf_writer):
+        assert roundtrip_stdf_writer["master_information"]["job_nam"] == "MYJOB"
+
+    def test_tst_temp(self, roundtrip_stdf_writer):
+        assert roundtrip_stdf_writer["master_information"]["tst_temp"] == "25C"
+
+    # Data DataFrame
+    def test_one_row(self, roundtrip_stdf_writer):
+        assert len(roundtrip_stdf_writer["data"]) == 1
+
+    def test_ptr_1000_result(self, roundtrip_stdf_writer):
+        value = roundtrip_stdf_writer["data"]["1000"][0]
+        assert math.isclose(value, 1.5, rel_tol=1e-5), f"Expected ~1.5, got {value}"
+
+    def test_ptr_2000_result(self, roundtrip_stdf_writer):
+        value = roundtrip_stdf_writer["data"]["2000"][0]
+        assert math.isclose(value, -0.5, rel_tol=1e-5), f"Expected ~-0.5, got {value}"
+
+    def test_hard_bin(self, roundtrip_stdf_writer):
+        assert roundtrip_stdf_writer["data"]["hbin"][0] == 1
+
+    def test_soft_bin(self, roundtrip_stdf_writer):
+        assert roundtrip_stdf_writer["data"]["sbin"][0] == 2
+
+    def test_part_id(self, roundtrip_stdf_writer):
+        assert roundtrip_stdf_writer["data"]["part_id"][0] == "PART_A"
+
+    # Test information DataFrame
+    def test_test_1000_text(self, roundtrip_stdf_writer):
+        ti = roundtrip_stdf_writer["test_information"]
+        row = ti.filter(ti["test_num"] == 1000)
+        assert row["test_text"][0] == "vdd_test"
+
+    def test_test_1000_units(self, roundtrip_stdf_writer):
+        ti = roundtrip_stdf_writer["test_information"]
+        row = ti.filter(ti["test_num"] == 1000)
+        assert row["units"][0] == "V"
+
+    def test_test_2000_units(self, roundtrip_stdf_writer):
+        ti = roundtrip_stdf_writer["test_information"]
+        row = ti.filter(ti["test_num"] == 2000)
+        assert row["units"][0] == "mA"
+
+
+class TestStdfWriterBytesMatchBatch:
+    """StdfWriter must produce bit-for-bit identical output to write_stdf."""
+
+    def test_bytes_equal(self, tmp_path):
+        records = _make_records()
+
+        stream_file = str(tmp_path / "stream.stdf")
+        with sf.StdfWriter(stream_file) as w:
+            for record in records:
+                w.write_record(record)
+
+        batch_file = str(tmp_path / "batch.stdf")
+        sf.write_stdf(batch_file, records)
+
+        assert open(stream_file, "rb").read() == open(batch_file, "rb").read()
+
+    def test_close_is_idempotent(self, tmp_path):
+        out_file = str(tmp_path / "idem.stdf")
+        w = sf.StdfWriter(out_file)
+        w.write_record(_make_records()[0])
+        w.close()
+        w.close()  # must not raise
+
+    def test_write_after_close_raises(self, tmp_path):
+        out_file = str(tmp_path / "closed.stdf")
+        w = sf.StdfWriter(out_file)
+        w.close()
+        with pytest.raises(OSError):
+            w.write_record(_make_records()[0])

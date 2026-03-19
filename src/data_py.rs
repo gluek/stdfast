@@ -203,5 +203,6 @@ fn stdfast(m: &Bound<'_, PyModule>) -> PyResult<()> {
     m.add_function(wrap_pyfunction!(get_raw_stdf, m)?)?;
     m.add_function(wrap_pyfunction!(get_raw_records, m)?)?;
     m.add_function(wrap_pyfunction!(crate::write_py::write_stdf, m)?)?;
+    m.add_class::<crate::write_py::StdfWriter>()?;
     Ok(())
 }
