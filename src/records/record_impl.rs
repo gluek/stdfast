@@ -6,7 +6,12 @@ use pyo3::prelude::*;
 use pyo3::types::PyDict;
 use std::{io, fmt};
 
-/// File Attributes Record
+/// File Attributes Record (REC_TYP=0, REC_SUB=10)
+///
+/// **Function:** Contains the information necessary to determine how to decode
+/// the STDF data contained in the file.
+///
+/// **Location:** Required as the first record of the file.
 #[derive(Debug, IntoPyObject, Clone)]
 #[allow(dead_code)]
 pub struct FAR {
@@ -49,7 +54,18 @@ impl FAR {
     }
 }
 
-/// Audit Trail Record
+/// Audit Trail Record (REC_TYP=0, REC_SUB=20)
+///
+/// **Function:** Used to record any operation that alters the contents of the
+/// STDF file. The name of the program and all its parameters should be recorded
+/// in the ASCII field provided in this record. Typically, this record will be
+/// used to track filter programs that have been applied to the data.
+///
+/// **Frequency:** Optional. One for each filter or other data transformation
+/// program applied to the STDF data.
+///
+/// **Location:** Between the File Attributes Record (FAR) and the Master
+/// Information Record (MIR).
 #[derive(Debug, IntoPyObject, Clone)]
 #[allow(dead_code)]
 pub struct ATR {
@@ -93,7 +109,17 @@ impl ATR {
     }
 }
 
-/// Master Information Record
+/// Master Information Record (REC_TYP=1, REC_SUB=10)
+///
+/// **Function:** The MIR and the MRR (Master Results Record) contain all the
+/// global information that is to be stored for a tested lot of parts. Each data
+/// stream must have exactly one MIR, immediately after the FAR (and the ATRs,
+/// if they are used).
+///
+/// **Frequency:** Always required. One per data stream.
+///
+/// **Location:** Immediately after the File Attributes Record (FAR) and the
+/// Audit Trail Records (ATR), if ATRs are used.
 #[derive(Debug, IntoPyObject, Clone)]
 #[allow(dead_code)]
 pub struct MIR {
@@ -375,7 +401,15 @@ impl MIR {
     }
 }
 
-/// Site Description Record
+/// Site Description Record (REC_TYP=1, REC_SUB=80)
+///
+/// **Function:** Contains the configuration information for one or more test
+/// sites, connected to one test head, that compose a site group.
+///
+/// **Frequency:** One for each site or group of sites that is differently
+/// configured.
+///
+/// **Location:** Immediately after the MIR and RDR (if an RDR is used).
 #[derive(Debug, Clone, IntoPyObject)]
 #[allow(dead_code)]
 pub struct SDR {
@@ -528,7 +562,19 @@ impl SDR {
     }
 }
 
-/// Test Synopsis Record
+/// Test Synopsis Record (REC_TYP=10, REC_SUB=30)
+///
+/// **Function:** Contains the test execution and failure counts for one
+/// parametric or functional test in the test program. Also contains static
+/// information, such as test name. The TSR is related to the FTR, PTR, and MPR
+/// by test number, head number, and site number.
+///
+/// **Frequency:** One for each test executed in the test program. May
+/// optionally be used to identify unexecuted tests.
+///
+/// **Location:** Anywhere in the data stream after the initial sequence and
+/// before the MRR. When test data is being generated in real-time, these
+/// records will appear after the last PRR.
 #[derive(Debug, IntoPyObject, Clone)]
 #[allow(dead_code)]
 #[allow(non_snake_case)]
@@ -647,7 +693,18 @@ impl TSR {
     }
 }
 
-/// Software Bin Record
+/// Software Bin Record (REC_TYP=1, REC_SUB=50)
+///
+/// **Function:** Stores a count of the parts associated with a particular
+/// logical bin after testing. This bin count can be for a single test site
+/// (when parallel testing) or a total for all test sites.
+///
+/// **Frequency:** One per software bin for each site. One per software bin for
+/// bin totals. May be included to name unused bins.
+///
+/// **Location:** Anywhere in the data stream after the initial sequence and
+/// before the MRR. When data is being recorded in real time, this record
+/// usually appears near the end of the data stream.
 #[derive(Debug, Clone, IntoPyObject)]
 #[allow(dead_code)]
 #[allow(non_snake_case)]
@@ -715,7 +772,18 @@ impl SBR {
     }
 }
 
-/// Wafer Information Record
+/// Wafer Information Record (REC_TYP=2, REC_SUB=10)
+///
+/// **Function:** Acts mainly as a marker to indicate where testing of a
+/// particular wafer begins for each wafer tested by the job plan. The WIR and
+/// the Wafer Results Record (WRR) bracket all the stored information pertaining
+/// to one tested wafer. This record is used only when testing at wafer probe.
+/// A WIR/WRR pair will have the same HEAD_NUM and SITE_GRP values.
+///
+/// **Frequency:** One per wafer tested.
+///
+/// **Location:** Anywhere in the data stream after the initial sequence and
+/// before the MRR. Sent before testing each wafer.
 #[derive(Debug, Clone, IntoPyObject)]
 #[allow(dead_code)]
 #[allow(non_snake_case)]
@@ -773,7 +841,18 @@ impl WIR {
     }
 }
 
-/// Wafer Results Record
+/// Wafer Results Record (REC_TYP=2, REC_SUB=20)
+///
+/// **Function:** Contains the result information relating to each wafer tested
+/// by the job plan. The WRR and the Wafer Information Record (WIR) bracket all
+/// the stored information pertaining to one tested wafer. This record is used
+/// only when testing at wafer probe time. A WIR/WRR pair will have the same
+/// HEAD_NUM and SITE_GRP values.
+///
+/// **Frequency:** One per wafer tested.
+///
+/// **Location:** Anywhere in the data stream after the corresponding WIR.
+/// Sent after testing each wafer.
 #[derive(Debug, IntoPyObject, Clone)]
 #[allow(dead_code)]
 #[allow(non_snake_case)]
@@ -886,7 +965,18 @@ impl WRR {
     }
 }
 
-/// Hardware Bin Record
+/// Hardware Bin Record (REC_TYP=1, REC_SUB=40)
+///
+/// **Function:** Stores a count of the parts "physically" placed in a
+/// particular bin after testing. This bin count can be for a single test site
+/// (when parallel testing) or a total for all test sites.
+///
+/// **Frequency:** One per hardware bin for each site. One per hardware bin for
+/// bin totals. May be included to name unused bins.
+///
+/// **Location:** Anywhere in the data stream after the initial sequence and
+/// before the MRR. When data is being recorded in real time, this record
+/// usually appears near the end of the data stream.
 #[derive(Debug, Clone, IntoPyObject)]
 #[allow(dead_code)]
 #[allow(non_snake_case)]
@@ -954,7 +1044,18 @@ impl HBR {
     }
 }
 
-/// Part Count Record
+/// Part Count Record (REC_TYP=1, REC_SUB=30)
+///
+/// **Function:** Contains the part count totals for one or all test sites.
+/// Each data stream must have at least one PCR to show the part count.
+///
+/// **Frequency:** At least one PCR required per file: either one summary PCR
+/// for all test sites (HEAD_NUM = 255), or one PCR for each head/site
+/// combination, or both.
+///
+/// **Location:** Anywhere in the data stream after the initial sequence and
+/// before the MRR. When data is being recorded in real time, this record will
+/// usually appear near the end of the data stream.
 #[derive(Debug, IntoPyObject, Clone)]
 #[allow(dead_code)]
 #[allow(non_snake_case)]
@@ -1026,7 +1127,17 @@ impl PCR {
     }
 }
 
-/// Part Information Record
+/// Part Information Record (REC_TYP=5, REC_SUB=10)
+///
+/// **Function:** Acts as a marker to indicate where testing of a particular
+/// part begins for each part tested by the test program. The PIR and the Part
+/// Results Record (PRR) bracket all the stored information pertaining to one
+/// tested part.
+///
+/// **Frequency:** One per part tested.
+///
+/// **Location:** Anywhere in the data stream after the initial sequence and
+/// before the corresponding PRR. Sent before testing each part.
 #[derive(Debug, IntoPyObject, Clone)]
 #[allow(dead_code)]
 #[allow(non_snake_case)]
@@ -1065,7 +1176,16 @@ impl PIR {
     }
 }
 
-/// Part Results Record
+/// Part Results Record (REC_TYP=5, REC_SUB=20)
+///
+/// **Function:** Contains the result information relating to each part tested
+/// by the test program. The PRR and the Part Information Record (PIR) bracket
+/// all the stored information pertaining to one tested part.
+///
+/// **Frequency:** One per part tested.
+///
+/// **Location:** Anywhere in the data stream after the corresponding PIR and
+/// before the MRR. Sent after completion of testing each part.
 #[derive(Debug, IntoPyObject, Clone)]
 #[allow(dead_code)]
 #[allow(non_snake_case)]
@@ -1167,7 +1287,17 @@ impl PRR {
     }
 }
 
-/// Master Results Record
+/// Master Results Record (REC_TYP=1, REC_SUB=20)
+///
+/// **Function:** The Master Results Record (MRR) is a logical extension of the
+/// Master Information Record (MIR). The data can be thought of as belonging
+/// with the MIR, but it is not available when the tester writes the MIR
+/// information. Each data stream must have exactly one MRR as the last record
+/// in the data stream.
+///
+/// **Frequency:** Exactly one MRR required per data stream.
+///
+/// **Location:** Must be the last record in the data stream.
 #[derive(Debug, IntoPyObject, Clone)]
 #[allow(dead_code)]
 #[allow(non_snake_case)]
@@ -1226,7 +1356,18 @@ impl MRR {
     }
 }
 
-/// Parametric Test Record
+/// Parametric Test Record (REC_TYP=15, REC_SUB=10)
+///
+/// **Function:** Contains the results of a single execution of a parametric
+/// test in the test program. The first occurrence of this record also
+/// establishes the default values for all semi-static information about the
+/// test, such as limits, units, and scaling. The PTR is related to the Test
+/// Synopsis Record (TSR) by test number, head number, and site number.
+///
+/// **Frequency:** One per parametric test execution.
+///
+/// **Location:** Under normal circumstances, anywhere in the data stream after
+/// the corresponding PIR and before the corresponding PRR.
 #[derive(Debug, IntoPyObject, Clone)]
 #[allow(dead_code)]
 #[allow(non_snake_case)]
@@ -1400,7 +1541,18 @@ impl fmt::Display for PTR {
     }
 }
 
-/// Functional Test Record
+/// Functional Test Record (REC_TYP=15, REC_SUB=20)
+///
+/// **Function:** Contains the results of the single execution of a functional
+/// test in the test program. The first occurrence of this record also
+/// establishes the default values for all semi-static information about the
+/// test. The FTR is related to the Test Synopsis Record (TSR) by test number,
+/// head number, and site number.
+///
+/// **Frequency:** One or more for each execution of a functional test.
+///
+/// **Location:** Anywhere in the data stream after the corresponding PIR and
+/// before the corresponding PRR.
 #[derive(Debug, IntoPyObject, Clone)]
 #[allow(dead_code)]
 #[allow(non_snake_case)]
@@ -1622,7 +1774,19 @@ impl fmt::Display for FTR {
     }
 }
 
-/// Multiple-Result Parametric Record
+/// Multiple-Result Parametric Record (REC_TYP=15, REC_SUB=15)
+///
+/// **Function:** Contains the results of a single execution of a parametric
+/// test in the test program where that test returns multiple values. The first
+/// occurrence of this record also establishes the default values for all
+/// semi-static information about the test, such as limits, units, and scaling.
+/// The MPR is related to the Test Synopsis Record (TSR) by test number, head
+/// number, and site number.
+///
+/// **Frequency:** One per multiple-result parametric test execution.
+///
+/// **Location:** Anywhere in the data stream after the corresponding PIR and
+/// before the corresponding PRR.
 #[derive(Debug, IntoPyObject, Clone)]
 #[allow(dead_code)]
 #[allow(non_snake_case)]
@@ -1810,7 +1974,17 @@ impl MPR {
     }
 }
 
-/// Pin Map Record
+/// Pin Map Record (REC_TYP=1, REC_SUB=60)
+///
+/// **Function:** Provides indexing of tester channel names, and maps them to
+/// physical and logical pin names. Each PMR defines the information for a
+/// single channel/pin combination.
+///
+/// **Frequency:** One per channel/pin combination used in the test program.
+/// Reuse of a PMR index number is not permitted.
+///
+/// **Location:** After the initial sequence and before the first PGR, PLR,
+/// FTR, or MPR that uses this record's PMR_INDX value.
 #[derive(Debug, IntoPyObject, Clone)]
 #[allow(dead_code)]
 #[allow(non_snake_case)]
@@ -1886,7 +2060,15 @@ impl PMR {
     }
 }
 
-/// Pin Group Record
+/// Pin Group Record (REC_TYP=1, REC_SUB=62)
+///
+/// **Function:** Associates a name with a group of pins.
+///
+/// **Frequency:** One per pin group defined in the test program.
+///
+/// **Location:** After all the PMRs whose PMR index values are listed in the
+/// PMR_INDX array of this record; and before the first PLR that uses this
+/// record's GRP_INDX value.
 #[derive(Debug, IntoPyObject, Clone)]
 #[allow(dead_code)]
 #[allow(non_snake_case)]
@@ -1947,7 +2129,18 @@ impl PGR {
     }
 }
 
-/// Pin List Record
+/// Pin List Record (REC_TYP=1, REC_SUB=63)
+///
+/// **Function:** Defines the current display radix and operating mode for a
+/// pin or pin group.
+///
+/// **Frequency:** One or more whenever the usage of a pin or pin group changes
+/// in the test program.
+///
+/// **Location:** After all the PMRs and PGRs whose PMR index values and pin
+/// group index values are listed in the GRP_INDX array of this record; and
+/// before the first FTR that references pins or pin groups whose modes are
+/// defined in this record.
 #[derive(Debug, IntoPyObject, Clone)]
 #[allow(dead_code)]
 #[allow(non_snake_case)]
@@ -2048,7 +2241,16 @@ impl PLR {
     }
 }
 
-/// Retest Data Record
+/// Retest Data Record (REC_TYP=1, REC_SUB=70)
+///
+/// **Function:** Signals that the data in this STDF file is for retested
+/// parts. The data in this record, combined with information in the MIR, tells
+/// data filtering programs what data to replace when processing retest data.
+///
+/// **Frequency:** Optional. One per data stream.
+///
+/// **Location:** If this record is used, it must appear immediately after the
+/// Master Information Record (MIR).
 #[derive(Debug, IntoPyObject, Clone)]
 #[allow(dead_code)]
 #[allow(non_snake_case)]
@@ -2094,7 +2296,17 @@ impl RDR {
     }
 }
 
-/// Wafer Configuration Record
+/// Wafer Configuration Record (REC_TYP=2, REC_SUB=30)
+///
+/// **Function:** Contains the configuration information for the wafers tested
+/// by the job plan. The WCR provides the dimensions and orientation information
+/// for all wafers and dice in the lot. This record is used only when testing at
+/// wafer probe time.
+///
+/// **Frequency:** One per STDF file (used only if wafer testing).
+///
+/// **Location:** Anywhere in the data stream after the initial sequence and
+/// before the MRR.
 #[derive(Debug, IntoPyObject, Clone)]
 #[allow(dead_code)]
 #[allow(non_snake_case)]
@@ -2176,7 +2388,14 @@ impl WCR {
     }
 }
 
-/// Begin Program Section Record
+/// Begin Program Section Record (REC_TYP=20, REC_SUB=10)
+///
+/// **Function:** Marks the beginning of a new program section (or sequencer)
+/// in the job plan.
+///
+/// **Frequency:** Optional on each entry into the program segment.
+///
+/// **Location:** Anywhere after the PIR and before the PRR.
 #[derive(Debug, IntoPyObject, Clone)]
 #[allow(dead_code)]
 #[allow(non_snake_case)]
@@ -2264,7 +2483,16 @@ impl EPS {
     }
 }
 
-/// Generic Data Record
+/// Generic Data Record (REC_TYP=50, REC_SUB=10)
+///
+/// **Function:** Contains information that does not conform to any other record
+/// type defined by the STDF specification. Such records are intended to be
+/// written under the control of job plans executing on the tester. This data
+/// may be used for any purpose that the user desires.
+///
+/// **Frequency:** A test data file may contain any number of GDRs.
+///
+/// **Location:** Anywhere in the data stream after the initial sequence.
 #[derive(Debug, Clone, IntoPyObject)]
 #[allow(dead_code)]
 #[allow(non_snake_case)]
@@ -2341,7 +2569,18 @@ impl GDR {
     }
 }
 
-/// Datalog Text Record
+/// Datalog Text Record (REC_TYP=50, REC_SUB=30)
+///
+/// **Function:** Contains text information that is to be included in the
+/// datalog printout. DTRs may be written under the control of a job plan: for
+/// example, to highlight unexpected test results. They may also be generated
+/// by the tester executive software: for example, to indicate that the datalog
+/// sampling rate has changed. DTRs are placed as comments in the datalog
+/// listing.
+///
+/// **Frequency:** A test data file may contain any number of DTRs.
+///
+/// **Location:** Anywhere in the data stream after the initial sequence.
 #[derive(Debug, IntoPyObject, Clone)]
 #[allow(dead_code)]
 #[allow(non_snake_case)]
