@@ -146,7 +146,13 @@ GenDataItem = Annotated[
 # ---------------------------------------------------------------------------
 
 class FAR(BaseModel):
-    """File Attributes Record (REC_TYP=0, REC_SUB=10)."""
+    """File Attributes Record (REC_TYP=0, REC_SUB=10).
+
+    **Function:** Contains the information necessary to determine how to decode
+    the STDF data contained in the file.
+
+    **Location:** Required as the first record of the file.
+    """
     record_type: Literal["FAR"] = "FAR"
     global_offset: USize = 0
     cpu_type: U8 = 2
@@ -155,7 +161,19 @@ class FAR(BaseModel):
 
 
 class ATR(BaseModel):
-    """Audit Trail Record (REC_TYP=0, REC_SUB=20)."""
+    """Audit Trail Record (REC_TYP=0, REC_SUB=20).
+
+    **Function:** Used to record any operation that alters the contents of the
+    STDF file. The name of the program and all its parameters should be recorded
+    in the ASCII field provided in this record. Typically, this record will be
+    used to track filter programs that have been applied to the data.
+
+    **Frequency:** Optional. One for each filter or other data transformation
+    program applied to the STDF data.
+
+    **Location:** Between the File Attributes Record (FAR) and the Master
+    Information Record (MIR).
+    """
     record_type: Literal["ATR"] = "ATR"
     global_offset: USize = 0
     mod_tim: U32 = 0
@@ -163,7 +181,18 @@ class ATR(BaseModel):
 
 
 class MIR(BaseModel):
-    """Master Information Record (REC_TYP=1, REC_SUB=10)."""
+    """Master Information Record (REC_TYP=1, REC_SUB=10).
+
+    **Function:** The MIR and the MRR (Master Results Record) contain all the
+    global information that is to be stored for a tested lot of parts. Each data
+    stream must have exactly one MIR, immediately after the FAR (and the ATRs,
+    if they are used).
+
+    **Frequency:** Always required. One per data stream.
+
+    **Location:** Immediately after the File Attributes Record (FAR) and the
+    Audit Trail Records (ATR), if ATRs are used.
+    """
     record_type: Literal["MIR"] = "MIR"
     global_offset: USize = 0
     setup_t: U32 = 0
@@ -207,7 +236,18 @@ class MIR(BaseModel):
 
 
 class MRR(BaseModel):
-    """Master Results Record (REC_TYP=1, REC_SUB=20)."""
+    """Master Results Record (REC_TYP=1, REC_SUB=20).
+
+    **Function:** The Master Results Record (MRR) is a logical extension of the
+    Master Information Record (MIR). The data can be thought of as belonging
+    with the MIR, but it is not available when the tester writes the MIR
+    information. Each data stream must have exactly one MRR as the last record
+    in the data stream.
+
+    **Frequency:** Exactly one MRR required per data stream.
+
+    **Location:** Must be the last record in the data stream.
+    """
     record_type: Literal["MRR"] = "MRR"
     global_offset: USize = 0
     finish_t: U32 = 0
@@ -217,7 +257,16 @@ class MRR(BaseModel):
 
 
 class SDR(BaseModel):
-    """Site Description Record (REC_TYP=1, REC_SUB=80)."""
+    """Site Description Record (REC_TYP=1, REC_SUB=80).
+
+    **Function:** Contains the configuration information for one or more test
+    sites, connected to one test head, that compose a site group.
+
+    **Frequency:** One for each site or group of sites that is differently
+    configured.
+
+    **Location:** Immediately after the MIR and RDR (if an RDR is used).
+    """
     record_type: Literal["SDR"] = "SDR"
     global_offset: USize = 0
     head_num: U8 = 1
@@ -243,7 +292,19 @@ class SDR(BaseModel):
 
 
 class WIR(BaseModel):
-    """Wafer Information Record (REC_TYP=2, REC_SUB=10)."""
+    """Wafer Information Record (REC_TYP=2, REC_SUB=10).
+
+    **Function:** Acts mainly as a marker to indicate where testing of a
+    particular wafer begins for each wafer tested by the job plan. The WIR and
+    the Wafer Results Record (WRR) bracket all the stored information pertaining
+    to one tested wafer. This record is used only when testing at wafer probe.
+    A WIR/WRR pair will have the same HEAD_NUM and SITE_GRP values.
+
+    **Frequency:** One per wafer tested.
+
+    **Location:** Anywhere in the data stream after the initial sequence and
+    before the MRR. Sent before testing each wafer.
+    """
     record_type: Literal["WIR"] = "WIR"
     global_offset: USize = 0
     head_num: U8 = 1
@@ -253,7 +314,19 @@ class WIR(BaseModel):
 
 
 class WRR(BaseModel):
-    """Wafer Results Record (REC_TYP=2, REC_SUB=20)."""
+    """Wafer Results Record (REC_TYP=2, REC_SUB=20).
+
+    **Function:** Contains the result information relating to each wafer tested
+    by the job plan. The WRR and the Wafer Information Record (WIR) bracket all
+    the stored information pertaining to one tested wafer. This record is used
+    only when testing at wafer probe time. A WIR/WRR pair will have the same
+    HEAD_NUM and SITE_GRP values.
+
+    **Frequency:** One per wafer tested.
+
+    **Location:** Anywhere in the data stream after the corresponding WIR.
+    Sent after testing each wafer.
+    """
     record_type: Literal["WRR"] = "WRR"
     global_offset: USize = 0
     head_num: U8 = 1
@@ -273,7 +346,18 @@ class WRR(BaseModel):
 
 
 class WCR(BaseModel):
-    """Wafer Configuration Record (REC_TYP=2, REC_SUB=30)."""
+    """Wafer Configuration Record (REC_TYP=2, REC_SUB=30).
+
+    **Function:** Contains the configuration information for the wafers tested
+    by the job plan. The WCR provides the dimensions and orientation information
+    for all wafers and dice in the lot. This record is used only when testing at
+    wafer probe time.
+
+    **Frequency:** One per STDF file (used only if wafer testing).
+
+    **Location:** Anywhere in the data stream after the initial sequence and
+    before the MRR.
+    """
     record_type: Literal["WCR"] = "WCR"
     global_offset: USize = 0
     wafr_siz: float = 0.0
@@ -288,7 +372,18 @@ class WCR(BaseModel):
 
 
 class PIR(BaseModel):
-    """Part Information Record (REC_TYP=5, REC_SUB=10)."""
+    """Part Information Record (REC_TYP=5, REC_SUB=10).
+
+    **Function:** Acts as a marker to indicate where testing of a particular
+    part begins for each part tested by the test program. The PIR and the Part
+    Results Record (PRR) bracket all the stored information pertaining to one
+    tested part.
+
+    **Frequency:** One per part tested.
+
+    **Location:** Anywhere in the data stream after the initial sequence and
+    before the corresponding PRR. Sent before testing each part.
+    """
     record_type: Literal["PIR"] = "PIR"
     global_offset: USize = 0
     head_num: U8 = 1
@@ -296,7 +391,17 @@ class PIR(BaseModel):
 
 
 class PRR(BaseModel):
-    """Part Results Record (REC_TYP=5, REC_SUB=20)."""
+    """Part Results Record (REC_TYP=5, REC_SUB=20).
+
+    **Function:** Contains the result information relating to each part tested
+    by the test program. The PRR and the Part Information Record (PIR) bracket
+    all the stored information pertaining to one tested part.
+
+    **Frequency:** One per part tested.
+
+    **Location:** Anywhere in the data stream after the corresponding PIR and
+    before the MRR. Sent after completion of testing each part.
+    """
     record_type: Literal["PRR"] = "PRR"
     global_offset: USize = 0
     head_num: U8 = 1
@@ -314,7 +419,21 @@ class PRR(BaseModel):
 
 
 class TSR(BaseModel):
-    """Test Synopsis Record (REC_TYP=10, REC_SUB=30)."""
+    """Test Synopsis Record (REC_TYP=10, REC_SUB=30).
+
+    **Function:** Contains the test execution and failure counts for one
+    parametric or functional test in the test program. Also contains static
+    information, such as test name. The TSR is related to the Functional Test
+    Record (FTR), the Parametric Test Record (PTR), and the Multiple Parametric
+    Test Record (MPR) by test number, head number, and site number.
+
+    **Frequency:** One for each test executed in the test program. May
+    optionally be used to identify unexecuted tests.
+
+    **Location:** Anywhere in the data stream after the initial sequence and
+    before the MRR. When test data is being generated in real-time, these
+    records will appear after the last PRR.
+    """
     record_type: Literal["TSR"] = "TSR"
     global_offset: USize = 0
     head_num: U8 = 1
@@ -336,7 +455,20 @@ class TSR(BaseModel):
 
 
 class PTR(BaseModel):
-    """Parametric Test Record (REC_TYP=15, REC_SUB=10)."""
+    """Parametric Test Record (REC_TYP=15, REC_SUB=10).
+
+    **Function:** Contains the results of a single execution of a parametric
+    test in the test program. The first occurrence of this record also
+    establishes the default values for all semi-static information about the
+    test, such as limits, units, and scaling. The PTR is related to the Test
+    Synopsis Record (TSR) by test number, head number, and site number.
+
+    **Frequency:** One per parametric test execution.
+
+    **Location:** Under normal circumstances, anywhere in the data stream after
+    the corresponding Part Information Record (PIR) and before the corresponding
+    Part Result Record (PRR).
+    """
     record_type: Literal["PTR"] = "PTR"
     global_offset: USize = 0
     test_num: U32 = 0
@@ -362,7 +494,21 @@ class PTR(BaseModel):
 
 
 class MPR(BaseModel):
-    """Multiple-Result Parametric Record (REC_TYP=15, REC_SUB=15)."""
+    """Multiple-Result Parametric Record (REC_TYP=15, REC_SUB=15).
+
+    **Function:** Contains the results of a single execution of a parametric
+    test in the test program where that test returns multiple values. The first
+    occurrence of this record also establishes the default values for all
+    semi-static information about the test, such as limits, units, and scaling.
+    The MPR is related to the Test Synopsis Record (TSR) by test number, head
+    number, and site number.
+
+    **Frequency:** One per multiple-result parametric test execution.
+
+    **Location:** Anywhere in the data stream after the corresponding Part
+    Information Record (PIR) and before the corresponding Part Result Record
+    (PRR).
+    """
     record_type: Literal["MPR"] = "MPR"
     global_offset: USize = 0
     test_num: U32 = 0
@@ -395,7 +541,20 @@ class MPR(BaseModel):
 
 
 class FTR(BaseModel):
-    """Functional Test Record (REC_TYP=15, REC_SUB=20)."""
+    """Functional Test Record (REC_TYP=15, REC_SUB=20).
+
+    **Function:** Contains the results of the single execution of a functional
+    test in the test program. The first occurrence of this record also
+    establishes the default values for all semi-static information about the
+    test. The FTR is related to the Test Synopsis Record (TSR) by test number,
+    head number, and site number.
+
+    **Frequency:** One or more for each execution of a functional test.
+
+    **Location:** Anywhere in the data stream after the corresponding Part
+    Information Record (PIR) and before the corresponding Part Result Record
+    (PRR).
+    """
     record_type: Literal["FTR"] = "FTR"
     global_offset: USize = 0
     test_num: U32 = 0
@@ -429,7 +588,19 @@ class FTR(BaseModel):
 
 
 class PCR(BaseModel):
-    """Part Count Record (REC_TYP=1, REC_SUB=30)."""
+    """Part Count Record (REC_TYP=1, REC_SUB=30).
+
+    **Function:** Contains the part count totals for one or all test sites.
+    Each data stream must have at least one PCR to show the part count.
+
+    **Frequency:** At least one PCR required per file: either one summary PCR
+    for all test sites (HEAD_NUM = 255), or one PCR for each head/site
+    combination, or both.
+
+    **Location:** Anywhere in the data stream after the initial sequence and
+    before the MRR. When data is being recorded in real time, this record will
+    usually appear near the end of the data stream.
+    """
     record_type: Literal["PCR"] = "PCR"
     global_offset: USize = 0
     head_num: U8 = 255
@@ -442,7 +613,21 @@ class PCR(BaseModel):
 
 
 class HBR(BaseModel):
-    """Hardware Bin Record (REC_TYP=1, REC_SUB=40)."""
+    """Hardware Bin Record (REC_TYP=1, REC_SUB=40).
+
+    **Function:** Stores a count of the parts "physically" placed in a
+    particular bin after testing. (In wafer testing, "physical" binning is not
+    an actual transfer of the chip, but rather is represented by a drop of ink
+    or an entry in a wafer map file.) This bin count can be for a single test
+    site (when parallel testing) or a total for all test sites.
+
+    **Frequency:** One per hardware bin for each site. One per hardware bin for
+    bin totals. May be included to name unused bins.
+
+    **Location:** Anywhere in the data stream after the initial sequence and
+    before the MRR. When data is being recorded in real time, this record
+    usually appears near the end of the data stream.
+    """
     record_type: Literal["HBR"] = "HBR"
     global_offset: USize = 0
     head_num: U8 = 1
@@ -454,7 +639,19 @@ class HBR(BaseModel):
 
 
 class SBR(BaseModel):
-    """Software Bin Record (REC_TYP=1, REC_SUB=50)."""
+    """Software Bin Record (REC_TYP=1, REC_SUB=50).
+
+    **Function:** Stores a count of the parts associated with a particular
+    logical bin after testing. This bin count can be for a single test site
+    (when parallel testing) or a total for all test sites.
+
+    **Frequency:** One per software bin for each site. One per software bin for
+    bin totals. May be included to name unused bins.
+
+    **Location:** Anywhere in the data stream after the initial sequence and
+    before the MRR. When data is being recorded in real time, this record
+    usually appears near the end of the data stream.
+    """
     record_type: Literal["SBR"] = "SBR"
     global_offset: USize = 0
     head_num: U8 = 1
@@ -466,7 +663,18 @@ class SBR(BaseModel):
 
 
 class PMR(BaseModel):
-    """Pin Map Record (REC_TYP=1, REC_SUB=60)."""
+    """Pin Map Record (REC_TYP=1, REC_SUB=60).
+
+    **Function:** Provides indexing of tester channel names, and maps them to
+    physical and logical pin names. Each PMR defines the information for a
+    single channel/pin combination.
+
+    **Frequency:** One per channel/pin combination used in the test program.
+    Reuse of a PMR index number is not permitted.
+
+    **Location:** After the initial sequence and before the first PGR, PLR,
+    FTR, or MPR that uses this record's PMR_INDX value.
+    """
     record_type: Literal["PMR"] = "PMR"
     global_offset: USize = 0
     pmr_indx: U16 = 1
@@ -479,7 +687,16 @@ class PMR(BaseModel):
 
 
 class PGR(BaseModel):
-    """Pin Group Record (REC_TYP=1, REC_SUB=62)."""
+    """Pin Group Record (REC_TYP=1, REC_SUB=62).
+
+    **Function:** Associates a name with a group of pins.
+
+    **Frequency:** One per pin group defined in the test program.
+
+    **Location:** After all the PMRs whose PMR index values are listed in the
+    PMR_INDX array of this record; and before the first PLR that uses this
+    record's GRP_INDX value.
+    """
     record_type: Literal["PGR"] = "PGR"
     global_offset: USize = 0
     grp_indx: U16 = 0
@@ -489,7 +706,19 @@ class PGR(BaseModel):
 
 
 class PLR(BaseModel):
-    """Pin List Record (REC_TYP=1, REC_SUB=63)."""
+    """Pin List Record (REC_TYP=1, REC_SUB=63).
+
+    **Function:** Defines the current display radix and operating mode for a
+    pin or pin group.
+
+    **Frequency:** One or more whenever the usage of a pin or pin group changes
+    in the test program.
+
+    **Location:** After all the PMRs and PGRs whose PMR index values and pin
+    group index values are listed in the GRP_INDX array of this record; and
+    before the first FTR that references pins or pin groups whose modes are
+    defined in this record.
+    """
     record_type: Literal["PLR"] = "PLR"
     global_offset: USize = 0
     grp_cnt: U16 = 0
@@ -503,7 +732,17 @@ class PLR(BaseModel):
 
 
 class RDR(BaseModel):
-    """Retest Data Record (REC_TYP=1, REC_SUB=70)."""
+    """Retest Data Record (REC_TYP=1, REC_SUB=70).
+
+    **Function:** Signals that the data in this STDF file is for retested
+    parts. The data in this record, combined with information in the MIR, tells
+    data filtering programs what data to replace when processing retest data.
+
+    **Frequency:** Optional. One per data stream.
+
+    **Location:** If this record is used, it must appear immediately after the
+    Master Information Record (MIR).
+    """
     record_type: Literal["RDR"] = "RDR"
     global_offset: USize = 0
     num_bins: U16 = 0
@@ -511,20 +750,47 @@ class RDR(BaseModel):
 
 
 class BPS(BaseModel):
-    """Begin Program Section Record (REC_TYP=20, REC_SUB=10)."""
+    """Begin Program Section Record (REC_TYP=20, REC_SUB=10).
+
+    **Function:** Marks the beginning of a new program section (or sequencer)
+    in the job plan.
+
+    **Frequency:** Optional on each entry into the program segment.
+
+    **Location:** Anywhere after the PIR and before the PRR.
+    """
     record_type: Literal["BPS"] = "BPS"
     global_offset: USize = 0
     seq_name: str = ""
 
 
 class EPS(BaseModel):
-    """End Program Section Record (REC_TYP=20, REC_SUB=20). Contains no data."""
+    """End Program Section Record (REC_TYP=20, REC_SUB=20).
+
+    **Function:** Marks the end of the current program section (or sequencer)
+    in the job plan. Contains no data fields.
+
+    **Frequency:** Optional on each exit from the program segment.
+
+    **Location:** Following the corresponding BPS and before the PRR in the
+    data stream.
+    """
     record_type: Literal["EPS"] = "EPS"
     global_offset: USize = 0
 
 
 class GDR(BaseModel):
-    """Generic Data Record (REC_TYP=50, REC_SUB=10)."""
+    """Generic Data Record (REC_TYP=50, REC_SUB=10).
+
+    **Function:** Contains information that does not conform to any other record
+    type defined by the STDF specification. Such records are intended to be
+    written under the control of job plans executing on the tester. This data
+    may be used for any purpose that the user desires.
+
+    **Frequency:** A test data file may contain any number of GDRs.
+
+    **Location:** Anywhere in the data stream after the initial sequence.
+    """
     record_type: Literal["GDR"] = "GDR"
     global_offset: USize = 0
     fld_cnt: U16 = 0
@@ -532,7 +798,19 @@ class GDR(BaseModel):
 
 
 class DTR(BaseModel):
-    """Datalog Text Record (REC_TYP=50, REC_SUB=30)."""
+    """Datalog Text Record (REC_TYP=50, REC_SUB=30).
+
+    **Function:** Contains text information that is to be included in the
+    datalog printout. DTRs may be written under the control of a job plan: for
+    example, to highlight unexpected test results. They may also be generated
+    by the tester executive software: for example, to indicate that the datalog
+    sampling rate has changed. DTRs are placed as comments in the datalog
+    listing.
+
+    **Frequency:** A test data file may contain any number of DTRs.
+
+    **Location:** Anywhere in the data stream after the initial sequence.
+    """
     record_type: Literal["DTR"] = "DTR"
     global_offset: USize = 0
     text_dat: str = ""
