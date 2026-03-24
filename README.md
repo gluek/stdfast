@@ -11,72 +11,6 @@ The purpose of the library is to quickly and efficiently parse and write STDF fi
 
 # Examples
 
-## Rust
-
-### Parsing
-
-```rust
-use stdfast::data::STDF;
-use polars::prelude::*;
-
-let verbose = false;
-if let Ok(stdf) = STDF::from_fname(&fname, verbose) {
-    let df: DataFrame = (&stdf.test_data).into();
-    let df_fmti: DataFrame = (&stdf.test_data.test_information).into();
-    println!("{df:#?}");
-    println!("{df_fmti}");
-    }
-```
-
-`Records` is a lazy iterator over `RawRecord`s. Each `RawRecord` reads from the file but does not
-parse its contents until `.resolve()` is called, which returns an `Option<Record>`. This lets you
-skip or filter records without paying the parsing cost for every one.
-
-**Print every record as ATDF text:**
-```rust
-use stdfast::records::Records;
-
-let records = Records::new("my_stdf.stdf")?;
-for raw in records {
-    if let Some(record) = raw.resolve() {
-        println!("{record}");
-    }
-}
-```
-
-**Collect only PTR records, resolving nothing else:**
-```rust
-use stdfast::records::{Records, record_impl::Record};
-
-let ptrs: Vec<_> = Records::new("my_stdf.stdf")?
-    .filter_map(|raw| raw.resolve())
-    .filter_map(|r| if let Record::PTR(ptr) = r { Some(ptr) } else { None })
-    .collect();
-```
-
-**Count records by type without resolving any:**
-```rust
-use stdfast::records::{Records, RecordSummary};
-
-let mut summary = RecordSummary::new();
-for raw in Records::new("my_stdf.stdf")? {
-    summary.add(&raw);
-}
-for (rtype, count) in summary {
-    println!("{rtype:?}: {count}");
-}
-```
-
-**Find the first failing PTR:**
-```rust
-use stdfast::records::{Records, record_impl::Record};
-
-let first_fail = Records::new("my_stdf.stdf")?
-    .filter_map(|raw| raw.resolve())
-    .filter_map(|r| if let Record::PTR(ptr) = r { Some(ptr) } else { None })
-    .find(|ptr| !ptr.pass());
-```
-
 ## Python
 
 Also contains Python bindings to this functionality, e.g.
@@ -169,6 +103,73 @@ with sf.StdfWriter("output.stdf") as w:
 ```
 
 `StdfWriter` is preferable when the number of records is large or unknown upfront, since it never holds more than one record in memory at a time.
+
+## Rust
+
+### Parsing
+
+```rust
+use stdfast::data::STDF;
+use polars::prelude::*;
+
+let verbose = false;
+if let Ok(stdf) = STDF::from_fname(&fname, verbose) {
+    let df: DataFrame = (&stdf.test_data).into();
+    let df_fmti: DataFrame = (&stdf.test_data.test_information).into();
+    println!("{df:#?}");
+    println!("{df_fmti}");
+    }
+```
+
+`Records` is a lazy iterator over `RawRecord`s. Each `RawRecord` reads from the file but does not
+parse its contents until `.resolve()` is called, which returns an `Option<Record>`. This lets you
+skip or filter records without paying the parsing cost for every one.
+
+**Print every record as ATDF text:**
+```rust
+use stdfast::records::Records;
+
+let records = Records::new("my_stdf.stdf")?;
+for raw in records {
+    if let Some(record) = raw.resolve() {
+        println!("{record}");
+    }
+}
+```
+
+**Collect only PTR records, resolving nothing else:**
+```rust
+use stdfast::records::{Records, record_impl::Record};
+
+let ptrs: Vec<_> = Records::new("my_stdf.stdf")?
+    .filter_map(|raw| raw.resolve())
+    .filter_map(|r| if let Record::PTR(ptr) = r { Some(ptr) } else { None })
+    .collect();
+```
+
+**Count records by type without resolving any:**
+```rust
+use stdfast::records::{Records, RecordSummary};
+
+let mut summary = RecordSummary::new();
+for raw in Records::new("my_stdf.stdf")? {
+    summary.add(&raw);
+}
+for (rtype, count) in summary {
+    println!("{rtype:?}: {count}");
+}
+```
+
+**Find the first failing PTR:**
+```rust
+use stdfast::records::{Records, record_impl::Record};
+
+let first_fail = Records::new("my_stdf.stdf")?
+    .filter_map(|raw| raw.resolve())
+    .filter_map(|r| if let Record::PTR(ptr) = r { Some(ptr) } else { None })
+    .find(|ptr| !ptr.pass());
+```
+
 
 # Installation
 
