@@ -348,6 +348,175 @@ class TestIterRawRecords:
         with pytest.raises(StopIteration):
             next(it)
 
+
+# ---------------------------------------------------------------------------
+# fname type tests: str, pathlib.Path, and binary file-like (io.BytesIO)
+# ---------------------------------------------------------------------------
+
+
+@pytest.fixture
+def stdf_file(tmp_path):
+    """Write a canonical record set to disk and return the Path."""
+    out = tmp_path / "fname_test.stdf"
+    sf.write_stdf(str(out), _make_records())
+    return out
+
+
+class TestFnameTypes:
+    """All public fname-accepting functions must work with str, Path and BytesIO."""
+
+    # ------------------------------------------------------------------
+    # parse_stdf
+    # ------------------------------------------------------------------
+
+    def test_parse_stdf_str(self, stdf_file):
+        result = sf.parse_stdf(str(stdf_file))
+        assert result["master_information"]["lot_id"] == "LOT001"
+
+    def test_parse_stdf_path(self, stdf_file):
+        from pathlib import Path
+
+        result = sf.parse_stdf(Path(stdf_file))
+        assert result["master_information"]["lot_id"] == "LOT001"
+
+    def test_parse_stdf_bytesio(self, stdf_file):
+        import io
+
+        result = sf.parse_stdf(io.BytesIO(stdf_file.read_bytes()))
+        assert result["master_information"]["lot_id"] == "LOT001"
+
+    # ------------------------------------------------------------------
+    # get_raw_stdf
+    # ------------------------------------------------------------------
+
+    def test_get_raw_stdf_str(self, stdf_file):
+        result = sf.get_raw_stdf(str(stdf_file))
+        assert result["master_information"]["lot_id"] == "LOT001"
+
+    def test_get_raw_stdf_path(self, stdf_file):
+        from pathlib import Path
+
+        result = sf.get_raw_stdf(Path(stdf_file))
+        assert result["master_information"]["lot_id"] == "LOT001"
+
+    def test_get_raw_stdf_bytesio(self, stdf_file):
+        import io
+
+        result = sf.get_raw_stdf(io.BytesIO(stdf_file.read_bytes()))
+        assert result["master_information"]["lot_id"] == "LOT001"
+
+    # ------------------------------------------------------------------
+    # get_mir
+    # ------------------------------------------------------------------
+
+    def test_get_mir_str(self, stdf_file):
+        mir = sf.get_mir(str(stdf_file))
+        assert mir["lot_id"] == "LOT001"
+
+    def test_get_mir_path(self, stdf_file):
+        from pathlib import Path
+
+        mir = sf.get_mir(Path(stdf_file))
+        assert mir["lot_id"] == "LOT001"
+
+    def test_get_mir_bytesio(self, stdf_file):
+        import io
+
+        mir = sf.get_mir(io.BytesIO(stdf_file.read_bytes()))
+        assert mir["lot_id"] == "LOT001"
+
+    # ------------------------------------------------------------------
+    # get_rows
+    # ------------------------------------------------------------------
+
+    def test_get_rows_str(self, stdf_file):
+        rows = sf.get_rows(str(stdf_file))
+        assert len(rows) == 1
+
+    def test_get_rows_path(self, stdf_file):
+        from pathlib import Path
+
+        rows = sf.get_rows(Path(stdf_file))
+        assert len(rows) == 1
+
+    def test_get_rows_bytesio(self, stdf_file):
+        import io
+
+        rows = sf.get_rows(io.BytesIO(stdf_file.read_bytes()))
+        assert len(rows) == 1
+
+    # ------------------------------------------------------------------
+    # get_raw_records
+    # ------------------------------------------------------------------
+
+    def test_get_raw_records_str(self, stdf_file):
+        records = sf.get_raw_records(str(stdf_file))
+        assert any(r["record_type"] == "MIR" for r in records)
+
+    def test_get_raw_records_path(self, stdf_file):
+        from pathlib import Path
+
+        records = sf.get_raw_records(Path(stdf_file))
+        assert any(r["record_type"] == "MIR" for r in records)
+
+    def test_get_raw_records_bytesio(self, stdf_file):
+        import io
+
+        records = sf.get_raw_records(io.BytesIO(stdf_file.read_bytes()))
+        assert any(r["record_type"] == "MIR" for r in records)
+
+    # ------------------------------------------------------------------
+    # iter_raw_records
+    # ------------------------------------------------------------------
+
+    def test_iter_raw_records_str(self, stdf_file):
+        records = list(sf.iter_raw_records(str(stdf_file)))
+        assert any(r["record_type"] == "MIR" for r in records)
+
+    def test_iter_raw_records_path(self, stdf_file):
+        from pathlib import Path
+
+        records = list(sf.iter_raw_records(Path(stdf_file)))
+        assert any(r["record_type"] == "MIR" for r in records)
+
+    def test_iter_raw_records_bytesio(self, stdf_file):
+        import io
+
+        records = list(sf.iter_raw_records(io.BytesIO(stdf_file.read_bytes())))
+        assert any(r["record_type"] == "MIR" for r in records)
+
+    # ------------------------------------------------------------------
+    # BytesIO results must match str results exactly (spot-checks)
+    # ------------------------------------------------------------------
+
+    def test_parse_stdf_bytesio_matches_str(self, stdf_file):
+        import io
+
+        r_str = sf.parse_stdf(str(stdf_file))
+        r_bio = sf.parse_stdf(io.BytesIO(stdf_file.read_bytes()))
+        assert r_str["master_information"] == r_bio["master_information"]
+        assert r_str["data"].equals(r_bio["data"])
+
+    def test_get_raw_records_bytesio_matches_str(self, stdf_file):
+        import io
+
+        from stdfast import _bytes_to_list
+
+        r_str = [_bytes_to_list(r) for r in sf.get_raw_records(str(stdf_file))]
+        r_bio = [
+            _bytes_to_list(r)
+            for r in sf.get_raw_records(io.BytesIO(stdf_file.read_bytes()))
+        ]
+        assert r_str == r_bio
+
+    # ------------------------------------------------------------------
+    # Type error on invalid input
+    # ------------------------------------------------------------------
+
+    def test_invalid_fname_type_raises(self, stdf_file):
+        with pytest.raises(TypeError):
+            sf.parse_stdf(12345)  # ty:ignore[invalid-argument-type]
+
     def test_file_not_found_raises(self, tmp_path):
         # iter_raw_records is a generator; the file is opened on first next()
         with pytest.raises(OSError):

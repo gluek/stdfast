@@ -134,12 +134,12 @@ impl std::fmt::Display for RawRecord {
 /// A helper struct for iterating through a buffered file reading and tracking the location
 ///
 /// Iterating over `Records` yields `RawRecords` in the file
-pub struct Records {
-    reader: BufReader<File>,
+pub struct Records<R: Read = BufReader<File>> {
+    reader: R,
     offset: usize,
 }
 
-impl Records {
+impl Records<BufReader<File>> {
     /// Create a new `Records` iterable from a filename `fname`
     pub fn new(fname: &str) -> std::io::Result<Self> {
         let f = File::open(&fname)?;
@@ -148,7 +148,14 @@ impl Records {
     }
 }
 
-impl Iterator for Records {
+impl<R: Read> Records<R> {
+    /// Create a new `Records` iterable from any `Read` implementor
+    pub fn from_reader(reader: R) -> Self {
+        Self { reader, offset: 0 }
+    }
+}
+
+impl<R: Read> Iterator for Records<R> {
     type Item = RawRecord;
 
     fn next(&mut self) -> Option<Self::Item> {

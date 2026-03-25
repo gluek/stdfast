@@ -1,4 +1,6 @@
+import os
 from collections.abc import Iterator
+from typing import IO, Union
 
 from pydantic import TypeAdapter
 
@@ -8,6 +10,11 @@ from .stdfast import get_raw_records as _get_raw_records
 from .stdfast import iter_raw_records as _iter_raw_records
 
 _record_adapter: TypeAdapter[Record] = TypeAdapter(Record)
+
+#: Accepted type for all ``fname`` parameters: a filesystem path (as a string
+#: or any :class:`os.PathLike`, e.g. :class:`pathlib.Path`) or a **binary**
+#: file-like object with a ``.read()`` method (e.g. :class:`io.BytesIO`).
+StrOrPath = Union[str, "os.PathLike[str]", IO[bytes]]
 
 
 def _bytes_to_list(obj: object) -> object:
@@ -21,15 +28,17 @@ def _bytes_to_list(obj: object) -> object:
     return obj
 
 
-def get_records(fname: str) -> list[Record]:
+def get_records(fname: StrOrPath) -> list[Record]:
     """Parse an STDF file and return a list of Pydantic record models.
 
     Each element is an instance of the appropriate model from
     ``stdfast.records`` (e.g. ``PTR``, ``MIR``, ``PRR``), determined by
     the ``record_type`` discriminator field.
 
-    :param fname: Path to the STDF file.
-    :returns: List of Pydantic record model instances.
+    Args:
+        fname: a ``str``, ``pathlib.Path`` or a binary file-like object.
+    Returns:
+        List of Pydantic record model instances.
 
     Example::
 
@@ -43,14 +52,17 @@ def get_records(fname: str) -> list[Record]:
     ]
 
 
-def iter_raw_records(fname: str) -> Iterator[dict]:
+def iter_raw_records(fname: StrOrPath) -> Iterator[dict]:
     """Lazily iterate an STDF file, yielding one raw record dict at a time.
 
     Unlike ``get_raw_records()``, only a single record is held in memory at a
     time. Suitable for very large files (e.g. ~9 million records).
 
-    :param fname: Path to the STDF file.
-    :returns: Iterator of dicts, each with a ``record_type`` key.
+    Args:
+        fname: a ``str``, ``pathlib.Path`` or a binary file-like object.
+
+    Yields:
+        Dicts with a ``record_type`` key plus the record's fields.
 
     Example::
 
@@ -60,16 +72,19 @@ def iter_raw_records(fname: str) -> Iterator[dict]:
                 process(record)
     """
     for raw in _iter_raw_records(fname):
-        yield _bytes_to_list(raw)
+        yield _bytes_to_list(raw)  # ty:ignore[invalid-yield]
 
 
-def iter_records(fname: str) -> Iterator[Record]:
+def iter_records(fname: StrOrPath) -> Iterator[Record]:
     """Lazily iterate an STDF file, yielding one validated Pydantic model at a time.
 
     Memory-efficient alternative to ``get_records()`` for large files.
 
-    :param fname: Path to the STDF file.
-    :returns: Iterator of Pydantic record model instances.
+    Args:
+        fname: a ``str``, ``pathlib.Path`` or a binary file-like object.
+
+    Yields:
+        Pydantic record model instances from ``stdfast.records``.
 
     Example::
 

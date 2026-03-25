@@ -1,9 +1,28 @@
 # flake8: noqa: PYI021
-def get_mir(fname):
+from __future__ import annotations
+
+import os
+from typing import IO, Union
+
+#: Accepted type for all ``fname`` parameters: a filesystem path (as a string
+#: or any :class:`os.PathLike`, e.g. :class:`pathlib.Path`) or a **binary**
+#: file-like object with a ``.read()`` method (e.g. :class:`io.BytesIO`).
+StrOrPath = Union[str, "os.PathLike[str]", IO[bytes]]
+
+def get_mir(fname: StrOrPath) -> dict:
+    """
+    Return the MIR (Master Information Record) as a dict.
+
+    ``fname`` may be a ``str``, ``pathlib.Path`` or a binary file-like object.
+    """
     ...
 
-def get_raw_records(fname: str) -> list:
-    """Return the parsed STDF records as a list of dicts, each with a ``record_type`` key."""
+def get_raw_records(fname: StrOrPath) -> list:
+    """
+    Return the parsed STDF records as a list of dicts, each with a ``record_type`` key.
+
+    ``fname`` may be a ``str``, ``pathlib.Path`` or a binary file-like object.
+    """
     ...
 
 class RawRecordsIter:
@@ -11,91 +30,83 @@ class RawRecordsIter:
     def __iter__(self) -> "RawRecordsIter": ...
     def __next__(self) -> dict: ...
 
-def iter_raw_records(fname: str) -> RawRecordsIter:
-    """Return a lazy iterator yielding one raw record dict at a time."""
+def iter_raw_records(fname: StrOrPath) -> RawRecordsIter:
+    """
+    Return a lazy iterator yielding one raw record dict at a time.
+
+    ``fname`` may be a ``str``, ``pathlib.Path`` or a binary file-like object.
+    """
     ...
 
-def get_raw_stdf(fname):
+def get_raw_stdf(fname: StrOrPath) -> dict:
     """
-    get_raw_stdf(fname: str)
-    --
+    Parse an STDF file into a nested dict structure.
 
-    Parse an STDF file specified by `fname` into a dict structure
+    ``fname`` may be a ``str``, ``pathlib.Path`` or a binary file-like object.
 
-    `fname` must be a `str` and may not be a `Path`-like object.
-
-    Returns a nested `dict` representing the raw rust STDF object. Useful if you
+    Returns a nested ``dict`` representing the raw rust STDF object.  Useful if you
     do not need the DataFrame representation and prefer a row-formatted representation.
-    The entire `dict` is fully realized, i.e. there are no generators.
-       `master_information`: `dict` describing the Master Infomation Record and Master
+    The entire ``dict`` is fully realized, i.e. there are no generators.
+       ``master_information``: ``dict`` describing the Master Information Record and Master
            Results Record (file metadata)
-       `wafer_information`: `dict` describing the Wafer Information Records and Wafer
+       ``wafer_information``: ``dict`` describing the Wafer Information Records and Wafer
            Results Records (wafer metadata)
-       `site_information`: `dict` describing site information
-       `soft_bins`: `dict` of {sbin: SBR}
-       `hard_bins`: `dict` of {hbin: HBR}
-       `pins`: `dict` of {pin_index: PMR}
-       `test_data`: a `dict` describing all of the test results
+       ``site_information``: ``dict`` describing site information
+       ``soft_bins``: ``dict`` of {sbin: SBR}
+       ``hard_bins``: ``dict`` of {hbin: HBR}
+       ``pins``: ``dict`` of {pin_index: PMR}
+       ``test_data``: a ``dict`` describing all of the test results
 
-    # Example
-    ```python
+    Example::
+
        import stdfast as sf
        raw_stdf = sf.get_raw_stdf("my_stdf.stdf")
        raw_stdf['master_information']
-    ```
     """
 
-def get_rows(fname):
+def get_rows(fname: StrOrPath) -> list:
     """
-    get_rows(fname: str)
-    --
+    Parse an STDF file and return a list of row dicts.
 
-    Parse an STDF file specified by `fname` and return a list of rows
+    ``fname`` may be a ``str``, ``pathlib.Path`` or a binary file-like object.
 
-    `fname` must be a `str` and may not be a `Path`-like object.
-
-    Returns a list of dicts, where each dict represent a single row (i.e. part).
+    Returns a list of dicts, where each dict represents a single row (i.e. part).
     Useful if you need only the row-formatted data. The list is fully realized,
     i.e. a proper list, not a generator.
 
-    # Example
-    ```python
+    Example::
+
        import stdfast as sf
        rows = sf.get_rows("my_stdf.stdf")
        rows[0]
-    ```
     """
 
-def parse_stdf(fname):
+def parse_stdf(fname: StrOrPath) -> dict:
     """
-    parse_stdf(fname: str)
-    --
+    Parse an STDF file.
 
-    Parse an STDF file specified by `fname`
-
-    `fname` must be a `str` and may not be a `Path`-like object.
+    ``fname`` may be a ``str``, ``pathlib.Path`` or a binary file-like object.
 
     Returns a dict with keys and values:
-       `master_information`: `dict` describing the Master Information Record and Master
+       ``master_information``: ``dict`` describing the Master Information Record and Master
            Results Record (file metadata)
-       `site_description`: `dict` describing the Site Description Record, or `None`
-       `wafers`: `list` of `dict` describing the Wafer Information Records and Wafer
+       ``site_description``: ``dict`` describing the Site Description Record, or ``None``
+       ``wafers``: ``list`` of ``dict`` describing the Wafer Information Records and Wafer
            Results Records (wafer metadata)
-       `soft_bins`: `DataFrame` containing the soft-bin information
-       `hard_bins`: `DataFrame` containing the hard-bin information
-       `pins`: `DataFrame` containing the pin mapping information
-       `pin_mapping`: `dict` mapping test number to a list of pin indices
-       `data`: `DataFrame` containing the test results
-       `test_information`: `DataFrame` containing the merged test information metadata
-       `full_test_information`: `dict` mapping `(test_num, site_num, head_num)` to
+       ``soft_bins``: ``DataFrame`` containing the soft-bin information
+       ``hard_bins``: ``DataFrame`` containing the hard-bin information
+       ``pins``: ``DataFrame`` containing the pin mapping information
+       ``pin_mapping``: ``dict`` mapping test number to a list of pin indices
+       ``data``: ``DataFrame`` containing the test results
+       ``test_information``: ``DataFrame`` containing the merged test information metadata
+       ``full_test_information``: ``dict`` mapping ``(test_num, site_num, head_num)`` to
            full test information metadata
 
-    # Example
-    ```python
+    Example::
+
        import stdfast as sf
        stdf = sf.parse_stdf("my_stdf.stdf")
-       stdf['df']
-    ```
+       stdf['data']
     """
 
 class StdfWriter:

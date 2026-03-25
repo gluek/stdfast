@@ -9,6 +9,8 @@
 //! stdf['df']
 //! ```
 use std::collections::HashMap;
+use std::fs::File;
+use std::io::{BufReader, Cursor, Read};
 
 use crate::{
     data::{MasterInformation, Row, STDF, TestData, WaferInformation},
@@ -46,11 +48,7 @@ struct PySTDF {
 }
 
 impl PySTDF {
-    /// Generates the PySTDF from a file specified by `fname`
-    ///
-    /// Analagous to `STDF::from_fname`
-    fn from_fname(fname: &str) -> std::io::Result<Self> {
-        let stdf = STDF::from_fname(&fname)?;
+    fn from_stdf(stdf: STDF) -> Self {
         let master_information = stdf.master_information.clone();
         let site_description = stdf.site_information.clone();
         let wafers = stdf.wafer_information.clone();
@@ -63,7 +61,7 @@ impl PySTDF {
         let data = PyDataFrame(test_data.into());
         let test_information = PyDataFrame(test_info.into());
         let full_test_information = stdf.test_data.full_test_information.test_infos;
-        Ok(Self {
+        Self {
             master_information,
             site_description,
             wafers,
@@ -74,7 +72,15 @@ impl PySTDF {
             data,
             test_information,
             full_test_information,
-        })
+        }
+    }
+
+    fn from_fname(fname: &str) -> std::io::Result<Self> {
+        Ok(Self::from_stdf(STDF::from_fname(fname)?))
+    }
+
+    fn from_bytes(data: Vec<u8>) -> std::io::Result<Self> {
+        Ok(Self::from_stdf(STDF::from_reader(Cursor::new(data))?))
     }
 }
 
@@ -107,8 +113,11 @@ impl PySTDF {
 ///    stdf['df']
 /// ```
 #[pyfunction]
-fn parse_stdf(fname: &str) -> PyResult<PySTDF> {
-    let pystdf = PySTDF::from_fname(&fname)?;
+fn parse_stdf(fname: &Bound<'_, PyAny>) -> PyResult<PySTDF> {
+    let pystdf = match resolve_source(fname)? {
+        Source::Path(path) => PySTDF::from_fname(&path)?,
+        Source::Bytes(bytes) => PySTDF::from_bytes(bytes)?,
+    };
     Ok(pystdf)
 }
 
@@ -130,8 +139,11 @@ fn parse_stdf(fname: &str) -> PyResult<PySTDF> {
 ///    rows[0]
 /// ```
 #[pyfunction]
-fn get_rows(fname: &str) -> PyResult<Vec<Row>> {
-    let test_data = TestData::from_fname(fname, false)?;
+fn get_rows(fname: &Bound<'_, PyAny>) -> PyResult<Vec<Row>> {
+    let test_data = match resolve_source(fname)? {
+        Source::Path(path) => TestData::from_fname(&path, false)?,
+        Source::Bytes(bytes) => TestData::from_bytes(&bytes, false)?,
+    };
     Ok(test_data.data)
 }
 
@@ -162,14 +174,20 @@ fn get_rows(fname: &str) -> PyResult<Vec<Row>> {
 ///    raw_stdf['master_information']
 /// ```
 #[pyfunction]
-fn get_raw_stdf(fname: &str) -> PyResult<STDF> {
-    let stdf = STDF::from_fname(fname)?;
+fn get_raw_stdf(fname: &Bound<'_, PyAny>) -> PyResult<STDF> {
+    let stdf = match resolve_source(fname)? {
+        Source::Path(path) => STDF::from_fname(&path)?,
+        Source::Bytes(bytes) => STDF::from_reader(Cursor::new(bytes))?,
+    };
     Ok(stdf)
 }
 
 #[pyfunction]
-fn get_mir(fname: &str) -> PyResult<MIR> {
-    let mir = MIR::from_fname(&fname)?;
+fn get_mir(fname: &Bound<'_, PyAny>) -> PyResult<MIR> {
+    let mir = match resolve_source(fname)? {
+        Source::Path(path) => MIR::from_fname(&path)?,
+        Source::Bytes(bytes) => MIR::from_reader(Cursor::new(bytes))?,
+    };
     Ok(mir)
 }
 
@@ -190,9 +208,48 @@ fn get_mir(fname: &str) -> PyResult<MIR> {
 ///    records = [ta.validate_python(r) for r in sf.get_raw_records("my.stdf")]
 /// ```
 #[pyfunction]
-fn get_raw_records(fname: &str) -> PyResult<Vec<Record>> {
-    let stdf = STDF::from_fname(fname)?;
+fn get_raw_records(fname: &Bound<'_, PyAny>) -> PyResult<Vec<Record>> {
+    let stdf = match resolve_source(fname)? {
+        Source::Path(path) => STDF::from_fname(&path)?,
+        Source::Bytes(bytes) => STDF::from_reader(Cursor::new(bytes))?,
+    };
     Ok(stdf.records)
+}
+
+/// Helper type representing a resolved input source.
+enum Source {
+    Path(String),
+    Bytes(Vec<u8>),
+}
+
+/// Resolve a Python argument to either a filesystem path or raw bytes.
+///
+/// Accepts:
+/// - `str` — treated as a file path
+/// - `os.PathLike` (e.g. `pathlib.Path`) — converted via `os.fspath()` then used as a path
+/// - binary file-like object (has a `.read()` method) — `.read()` is called and the bytes
+///   are buffered
+fn resolve_source(arg: &Bound<'_, PyAny>) -> PyResult<Source> {
+    // 1. Plain str
+    if let Ok(s) = arg.extract::<String>() {
+        return Ok(Source::Path(s));
+    }
+    // 2. os.PathLike (handles pathlib.Path and anything implementing __fspath__)
+    let py = arg.py();
+    if let Ok(fspath_result) = py.import("os").and_then(|os| os.call_method1("fspath", (arg,))) {
+        if let Ok(s) = fspath_result.extract::<String>() {
+            return Ok(Source::Path(s));
+        }
+    }
+    // 3. Binary file-like object: call .read() with no arguments
+    if let Ok(result) = arg.call_method0("read") {
+        if let Ok(bytes) = result.extract::<Vec<u8>>() {
+            return Ok(Source::Bytes(bytes));
+        }
+    }
+    Err(pyo3::exceptions::PyTypeError::new_err(
+        "fname must be a str, os.PathLike, or a binary file-like object (with a .read() method)",
+    ))
 }
 
 /// A lazy iterator over raw STDF record dicts.
@@ -202,7 +259,7 @@ fn get_raw_records(fname: &str) -> PyResult<Vec<Record>> {
 /// at a time.
 #[pyclass]
 pub struct RawRecordsIter {
-    inner: Records,
+    inner: Records<Box<dyn Read + Send + Sync>>,
 }
 
 #[pymethods]
@@ -246,8 +303,17 @@ impl RawRecordsIter {
 ///            print(record)
 /// ```
 #[pyfunction]
-fn iter_raw_records(fname: &str) -> PyResult<RawRecordsIter> {
-    let inner = Records::new(fname)?;
+fn iter_raw_records(fname: &Bound<'_, PyAny>) -> PyResult<RawRecordsIter> {
+    let inner: Records<Box<dyn Read + Send + Sync>> = match resolve_source(fname)? {
+        Source::Path(path) => {
+            let reader: Box<dyn Read + Send + Sync> = Box::new(BufReader::new(File::open(path)?));
+            Records::from_reader(reader)
+        }
+        Source::Bytes(bytes) => {
+            let reader: Box<dyn Read + Send + Sync> = Box::new(Cursor::new(bytes));
+            Records::from_reader(reader)
+        }
+    };
     Ok(RawRecordsIter { inner })
 }
 

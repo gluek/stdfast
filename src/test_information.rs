@@ -302,8 +302,8 @@ impl FullTestInformation {
     ///
     /// # Errors
     /// If for some reason the file can't be parsed, returns a std::io::Error
-    pub fn from_fname(fname: &str, verbose: bool) -> std::io::Result<Self> {
-        let records = Records::new(&fname)?;
+    pub fn from_reader<R: std::io::Read>(reader: R, verbose: bool) -> std::io::Result<Self> {
+        let records = Records::from_reader(reader);
         let mut test_info = Self::new();
 
         for record in records {
@@ -338,6 +338,13 @@ impl FullTestInformation {
             }
         }
         Ok(test_info)
+    }
+
+    /// # Errors
+    /// If for some reason the file can't be parsed, returns a std::io::Error
+    pub fn from_fname(fname: &str, verbose: bool) -> std::io::Result<Self> {
+        let f = std::fs::File::open(fname)?;
+        Self::from_reader(std::io::BufReader::new(f), verbose)
     }
 
     pub fn from_records(records: &Vec<Record>) -> std::io::Result<Self> {

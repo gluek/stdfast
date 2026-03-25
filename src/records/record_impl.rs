@@ -298,6 +298,28 @@ impl fmt::Display for MIR {
 }
 
 impl MIR {
+    /// Get the MIR from a `Read` implementor.
+    ///
+    /// Scans forward until the first MIR record is found.
+    ///
+    /// # Error
+    /// Returns `std::io::ErrorKind::UnexpectedEof` if no MIR is found.
+    pub fn from_reader<R: io::Read>(reader: R) -> std::io::Result<Self> {
+        let records = Records::from_reader(reader);
+
+        for record in records {
+            if let Some(resolved) = record.resolve() {
+                if let Record::MIR(mir) = resolved {
+                    return Ok(mir);
+                }
+            }
+        }
+        Err(io::Error::new(
+            io::ErrorKind::UnexpectedEof,
+            "Failed to find MIR in file",
+        ))
+    }
+
     /// Get the MIR from a file at `fname`
     ///
     /// Opens the file from scratch and grabs the MIR rather than re-use some open file handle.

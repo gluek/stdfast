@@ -377,6 +377,42 @@ impl TestData {
         test_data.normalize_multipin_results();
         Ok(test_data)
     }
+
+    /// Parse `TestData` from an in-memory byte slice.
+    ///
+    /// Equivalent to `from_fname` but reads from `data` instead of a file on disk.
+    /// The bytes are read twice (two sequential passes), matching the behaviour of
+    /// `from_fname`.
+    pub fn from_bytes(data: &[u8], verbose: bool) -> std::io::Result<Self> {
+        use std::io::Cursor;
+        let test_info = FullTestInformation::from_reader(Cursor::new(data), verbose)?;
+        let mut test_data = Self::new(test_info);
+        let records = Records::from_reader(Cursor::new(data));
+
+        for record in records {
+            match record.rtype {
+                RecordType::WIR | RecordType::PIR | RecordType::PTR |
+                RecordType::FTR | RecordType::MPR | RecordType::PRR |
+                RecordType::WRR => {
+                    if let Some(resolved) = record.resolve() {
+                        match resolved {
+                            Record::WIR(ref wir) => test_data.new_wafer(wir),
+                            Record::PIR(ref pir) => test_data.new_part(pir),
+                            Record::PTR(ref ptr) => test_data.add_data_ptr(ptr),
+                            Record::FTR(ref ftr) => test_data.add_data_ftr(ftr),
+                            Record::MPR(ref mpr) => test_data.add_data_mpr(mpr),
+                            Record::PRR(ref prr) => test_data.finish_part(prr),
+                            Record::WRR(_) => test_data.close_wafer(),
+                            _ => {}
+                        }
+                    }
+                }
+                _ => {}
+            }
+        }
+        test_data.normalize_multipin_results();
+        Ok(test_data)
+    }
 }
 
 /// Converts a `&TestData` into a `DataFrame` containing a tabular listing of all test results
@@ -646,6 +682,117 @@ impl STDF {
     /// ```
     /// # Error
     /// If for some reason the file cannot be parsed, returns an `std::io::Error`
+    /// Parse an `STDF` from any `Read` implementor.
+    ///
+    /// Equivalent to `from_fname` but accepts any byte source such as
+    /// `std::io::Cursor<Vec<u8>>` or a network stream.
+    pub fn from_reader<R: std::io::Read>(reader: R) -> std::io::Result<Self> {
+        let raw_records = Records::from_reader(reader);
+        let mut records: Vec<Record> = Vec::new();
+        for record in raw_records {
+            if let Some(resolved) = record.resolve() {
+                records.push(resolved.clone());
+            }
+        }
+
+        let test_info = FullTestInformation::from_records(&records).unwrap();
+        let mut test_data = TestData::new(test_info);
+
+        let mut wafer_information = Vec::new();
+        let mut soft_bins = HashMap::new();
+        let mut hard_bins = HashMap::new();
+        let mut pins = HashMap::new();
+
+        let mut mandatory_records_found = HashMap::from([
+            ("FAR", false),
+            ("MIR", false),
+            ("PCR", false),
+            ("MRR", false)
+        ]);
+
+        let mut opt_mir: Option<MIR> = None;
+        let mut opt_mrr: Option<MRR> = None;
+        let mut opt_sdr: Option<SDR> = None;
+
+        let mut active_wir: Option<WIR> = None;
+
+        for record in &records {
+            match record {
+                Record::FAR(_) => {
+                    mandatory_records_found.insert("FAR", true);
+                }
+                Record::MIR(mir) => {
+                    mandatory_records_found.insert("MIR", true);
+                    opt_mir = Some(mir.clone());
+                }
+                Record::SDR(sdr) => {
+                    opt_sdr = Some(sdr.clone());
+                }
+                Record::SBR(sbr) => {
+                    soft_bins.insert(sbr.sbin_num, sbr.clone());
+                }
+                Record::HBR(hbr) => {
+                    hard_bins.insert(hbr.hbin_num, hbr.clone());
+                }
+                Record::PMR(pmr) => {
+                    pins.insert(pmr.pmr_indx, pmr.clone());
+                }
+                Record::WIR(wir) => {
+                    test_data.new_wafer(&wir);
+                    active_wir = Some(wir.clone());
+                }
+                Record::PIR(pir) => {
+                    test_data.new_part(pir);
+                }
+                Record::PTR(ptr) => {
+                    test_data.add_data_ptr(ptr);
+                }
+                Record::FTR(ftr) => {
+                    test_data.add_data_ftr(ftr);
+                }
+                Record::MPR(mpr) => {
+                    test_data.add_data_mpr(mpr);
+                }
+                Record::PRR(prr) => {
+                    test_data.finish_part(prr);
+                }
+                Record::WRR(wrr) => {
+                    test_data.close_wafer();
+                    wafer_information.push(WaferInformation::new(active_wir.take()
+                        .expect("Found WRR without active WIR."), wrr.clone()));
+                }
+                Record::PCR(_) => {
+                    mandatory_records_found.insert("PCR", true);
+                }
+                Record::MRR(mrr) => {
+                    mandatory_records_found.insert("MRR", true);
+                    opt_mrr = Some(mrr.clone());
+                }
+                _ => {}
+            }
+        }
+        test_data.normalize_multipin_results();
+        if let (Some(mir), Some(mrr)) = (opt_mir, opt_mrr) {
+            let master_information = MasterInformation::new(mir, mrr);
+            let site_information = opt_sdr;
+            Ok(Self {
+                records,
+                master_information,
+                wafer_information,
+                site_information,
+                soft_bins,
+                hard_bins,
+                pins,
+                test_data,
+            })
+        } else {
+            Err(std::io::Error::new(
+                std::io::ErrorKind::UnexpectedEof,
+                "Failed to parse STDF: MIR or MRR missing.",
+            ))
+        }
+    }
+
     pub fn from_fname(fname: &str) -> std::io::Result<Self> {
         let raw_records = Records::new(&fname)?;
         let mut records: Vec<Record> = Vec::new();
