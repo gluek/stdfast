@@ -1,5 +1,9 @@
 # Changelog
 
+## 0.1.2
+
+- Bump version for new build files
+
 ## 0.1.1
 
 - Improve python bindings to accept file-like objects instead of only strings
