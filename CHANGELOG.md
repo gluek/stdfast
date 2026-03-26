@@ -1,5 +1,10 @@
 # Changelog
 
+
+## 0.2.0
+
+- New append mode for StdfWriter
+
 ## 0.1.2
 
 - Bump version for new build files

@@ -20,6 +20,7 @@
 //! ```
 
 use std::fs::File;
+use std::fs::OpenOptions;
 use std::io::{BufWriter, Write};
 use std::sync::Mutex;
 
@@ -576,8 +577,9 @@ pub struct StdfWriter {
 #[pymethods]
 impl StdfWriter {
     #[new]
-    pub fn open(fname: &str) -> PyResult<Self> {
-        let file = File::create(fname)
+    #[pyo3(signature = (fname, append = false))]
+    pub fn open(fname: &str, append: bool) -> PyResult<Self> {
+        let file = OpenOptions::new().write(true).create(true).truncate(!append).append(append).open(fname)
             .map_err(|e| pyo3::exceptions::PyIOError::new_err(e.to_string()))?;
         Ok(Self {
             inner: Mutex::new(Some(BufWriter::new(file))),

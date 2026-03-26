@@ -92,7 +92,8 @@ sf.write_stdf("output.stdf", records)
 import stdfast as sf
 from stdfast.records import FAR, MIR, MRR, PIR, PTR, PRR
 
-with sf.StdfWriter("output.stdf") as w:
+# Creates new file or overwrites content if it exists
+with sf.StdfWriter("output.stdf", append=False) as w:
     w.write_record(FAR(cpu_type=2, stdf_ver=4))
     w.write_record(MIR(lot_id="LOT001", part_typ="MYPART", job_nam="MYJOB"))
     for i, result in enumerate(my_results):
@@ -100,6 +101,11 @@ with sf.StdfWriter("output.stdf") as w:
         w.write_record(PTR(test_num=1000 + i, head_num=1, site_num=1, result=result, test_txt=f"test_{i}"))
         w.write_record(PRR(head_num=1, site_num=1, hard_bin=1, soft_bin=1, num_test=1))
     w.write_record(MRR())
+
+# Creates new file or appends to content if it exists
+with sf.StdfWriter("output.stdf", append=True) as w:
+    ...
+
 ```
 
 `StdfWriter` is preferable when the number of records is large or unknown upfront, since it never holds more than one record in memory at a time.

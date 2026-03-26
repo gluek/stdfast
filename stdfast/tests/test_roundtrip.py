@@ -3,6 +3,7 @@ Roundtrip tests: Python records → write_stdf → binary file → parse_stdf �
 """
 
 import math
+import os
 
 import pytest
 
@@ -246,6 +247,217 @@ class TestStdfWriterRoundtrip:
         ti = roundtrip_stdf_writer["test_information"]
         row = ti.filter(ti["test_num"] == 2000)
         assert row["units"][0] == "mA"
+
+
+# ---------------------------------------------------------------------------
+# StdfWriter append mode
+# ---------------------------------------------------------------------------
+
+
+def _make_first_part():
+    """FAR + MIR + TSR + first PIR/PTR/PRR block (no MRR yet).
+
+    The TSR must precede PIR so that test_num 1000 is registered before the
+    second parse pass processes PTRs.
+    """
+    return [
+        FAR(cpu_type=2, stdf_ver=4),
+        MIR(lot_id="LOT_APPEND", part_typ="APPEND_PART", job_nam="APPEND_JOB"),
+        TSR(
+            test_num=1000,
+            head_num=1,
+            site_num=1,
+            test_typ="P",
+            test_nam="vdd",
+            exec_cnt=2,
+        ),
+        PIR(head_num=1, site_num=1),
+        PTR(
+            test_num=1000,
+            head_num=1,
+            site_num=1,
+            result=1.0,
+            test_txt="vdd",
+            lo_limit=0.9,
+            hi_limit=1.2,
+            units="V",
+        ),
+        PRR(
+            head_num=1,
+            site_num=1,
+            hard_bin=1,
+            soft_bin=1,
+            num_test=1,
+            part_id="PART_001",
+        ),
+    ]
+
+
+def _make_second_part():
+    """Second PIR/PTR/PRR block + MRR to close the file."""
+    return [
+        PIR(head_num=1, site_num=1),
+        PTR(
+            test_num=1000,
+            head_num=1,
+            site_num=1,
+            result=1.1,
+            test_txt="vdd",
+            lo_limit=0.9,
+            hi_limit=1.2,
+            units="V",
+        ),
+        PRR(
+            head_num=1,
+            site_num=1,
+            hard_bin=1,
+            soft_bin=1,
+            num_test=1,
+            part_id="PART_002",
+        ),
+        MRR(),
+    ]
+
+
+class TestStdfWriterAppend:
+    """Tests for StdfWriter append=True mode."""
+
+    def test_append_extends_raw_record_count(self, tmp_path):
+        """Appending records to an existing file increases the total record count."""
+        path = str(tmp_path / "append_count.stdf")
+        first = _make_first_part()
+        second = _make_second_part()
+
+        with sf.StdfWriter(path) as w:
+            for r in first:
+                w.write_record(r)
+
+        with sf.StdfWriter(path, append=True) as w:
+            for r in second:
+                w.write_record(r)
+
+        raw = sf.get_raw_records(path)
+        assert len(raw) == len(first) + len(second)
+
+    def test_append_record_order(self, tmp_path):
+        """Records appear in the file in exactly the order they were written."""
+        path = str(tmp_path / "append_order.stdf")
+        first = _make_first_part()  # FAR, MIR, PIR, PTR, PRR
+        second = _make_second_part()  # PIR, PTR, PRR, MRR
+
+        with sf.StdfWriter(path) as w:
+            for r in first:
+                w.write_record(r)
+
+        with sf.StdfWriter(path, append=True) as w:
+            for r in second:
+                w.write_record(r)
+
+        types = [r["record_type"] for r in sf.get_raw_records(path)]
+        assert types == ["FAR", "MIR", "PIR", "PTR", "PRR", "PIR", "PTR", "PRR", "MRR"]
+
+    def test_append_parses_both_parts(self, tmp_path):
+        """parse_stdf on a split-written STDF yields both parts as data rows."""
+        path = str(tmp_path / "append_parse.stdf")
+
+        with sf.StdfWriter(path) as w:
+            for r in _make_first_part():
+                w.write_record(r)
+
+        with sf.StdfWriter(path, append=True) as w:
+            for r in _make_second_part():
+                w.write_record(r)
+
+        result = sf.parse_stdf(path)
+        assert len(result["data"]) == 2
+
+    def test_append_part_ids(self, tmp_path):
+        """Both part IDs survive the split-write roundtrip."""
+        path = str(tmp_path / "append_part_ids.stdf")
+
+        with sf.StdfWriter(path) as w:
+            for r in _make_first_part():
+                w.write_record(r)
+
+        with sf.StdfWriter(path, append=True) as w:
+            for r in _make_second_part():
+                w.write_record(r)
+
+        part_ids = sf.parse_stdf(path)["data"]["part_id"].to_list()
+        assert "PART_001" in part_ids
+        assert "PART_002" in part_ids
+
+    def test_no_append_truncates_existing_file(self, tmp_path):
+        """Opening StdfWriter without append=True discards the original content."""
+        path = str(tmp_path / "no_append.stdf")
+
+        with sf.StdfWriter(path) as w:
+            for r in _make_first_part() + _make_second_part():
+                w.write_record(r)
+
+        # Overwrite with just a single FAR record
+        with sf.StdfWriter(path) as w:
+            w.write_record(FAR(cpu_type=2, stdf_ver=4))
+
+        raw = sf.get_raw_records(path)
+        assert len(raw) == 1
+        assert raw[0]["record_type"] == "FAR"
+
+    def test_append_preserves_original_bytes(self, tmp_path):
+        """Bytes written in the first session are not modified by an append."""
+        path = str(tmp_path / "bytes_preserved.stdf")
+
+        with sf.StdfWriter(path) as w:
+            for r in _make_first_part():
+                w.write_record(r)
+
+        original_bytes = open(path, "rb").read()
+
+        with sf.StdfWriter(path, append=True) as w:
+            for r in _make_second_part():
+                w.write_record(r)
+
+        all_bytes = open(path, "rb").read()
+        assert all_bytes[: len(original_bytes)] == original_bytes
+
+    def test_append_bytes_equal_manual_concat(self, tmp_path):
+        """Content of the appended file equals the manual concatenation of both parts."""
+        file_a = str(tmp_path / "part_a.stdf")
+        file_b = str(tmp_path / "part_b.stdf")
+        file_ab = str(tmp_path / "appended.stdf")
+
+        with sf.StdfWriter(file_a) as w:
+            for r in _make_first_part():
+                w.write_record(r)
+
+        with sf.StdfWriter(file_b) as w:
+            for r in _make_second_part():
+                w.write_record(r)
+
+        with sf.StdfWriter(file_ab) as w:
+            for r in _make_first_part():
+                w.write_record(r)
+
+        with sf.StdfWriter(file_ab, append=True) as w:
+            for r in _make_second_part():
+                w.write_record(r)
+
+        concat = open(file_a, "rb").read() + open(file_b, "rb").read()
+        appended = open(file_ab, "rb").read()
+        assert appended == concat
+
+    def test_append_creates_new_file(self, tmp_path):
+        """append=True on a nonexistent path creates the file."""
+        path = str(tmp_path / "new_via_append.stdf")
+        assert not os.path.exists(path)
+
+        records = _make_first_part() + _make_second_part()
+        with sf.StdfWriter(path, append=True) as w:
+            for r in records:
+                w.write_record(r)
+
+        assert os.path.exists(path)
+        assert len(sf.get_raw_records(path)) == len(records)
 
 
 class TestStdfWriterBytesMatchBatch:
