@@ -691,7 +691,7 @@ impl STDF {
         let mut records: Vec<Record> = Vec::new();
         for record in raw_records {
             if let Some(resolved) = record.resolve() {
-                records.push(resolved.clone());
+                records.push(resolved);
             }
         }
 
@@ -798,7 +798,7 @@ impl STDF {
         let mut records: Vec<Record> = Vec::new();
         for record in raw_records {
             if let Some(resolved) = record.resolve() {
-                records.push(resolved.clone());
+                records.push(resolved);
             }
         }
 
