@@ -1,5 +1,9 @@
 # Changelog
 
+## 0.2.1
+
+- remove one unnecessary clone to improve performance
+- refactor STDF methods to improve raw record retrieval and update test cases for consistency
 
 ## 0.2.0
 
