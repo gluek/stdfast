@@ -687,13 +687,7 @@ impl STDF {
     /// Equivalent to `from_fname` but accepts any byte source such as
     /// `std::io::Cursor<Vec<u8>>` or a network stream.
     pub fn from_reader<R: std::io::Read>(reader: R) -> std::io::Result<Self> {
-        let raw_records = Records::from_reader(reader);
-        let mut records: Vec<Record> = Vec::new();
-        for record in raw_records {
-            if let Some(resolved) = record.resolve() {
-                records.push(resolved);
-            }
-        }
+        let records = STDF::get_raw_records_from_reader(reader);
 
         let test_info = FullTestInformation::from_records(&records).unwrap();
         let mut test_data = TestData::new(test_info);
@@ -794,13 +788,7 @@ impl STDF {
     }
 
     pub fn from_fname(fname: &str) -> std::io::Result<Self> {
-        let raw_records = Records::new(&fname)?;
-        let mut records: Vec<Record> = Vec::new();
-        for record in raw_records {
-            if let Some(resolved) = record.resolve() {
-                records.push(resolved);
-            }
-        }
+        let records = STDF::get_raw_records_from_fname(fname);
 
         let test_info = FullTestInformation::from_records(&records).unwrap();
         let mut test_data = TestData::new(test_info);
@@ -898,6 +886,28 @@ impl STDF {
                 format!("Failed to parse {fname}! MIR or MRR missing."),
             ))
         }
+    }
+
+    pub fn get_raw_records_from_reader<R: std::io::Read>(reader: R) -> Vec<Record> {
+        let raw_records = Records::from_reader(reader);
+        let mut records: Vec<Record> = Vec::new();
+        for record in raw_records {
+            if let Some(resolved) = record.resolve() {
+                records.push(resolved);
+            }
+        }
+        records
+    }
+
+    pub fn get_raw_records_from_fname(fname: &str) -> Vec<Record> {
+        let raw_records = Records::new(&fname).unwrap();
+        let mut records: Vec<Record> = Vec::new();
+        for record in raw_records {
+            if let Some(resolved) = record.resolve() {
+                records.push(resolved);
+            }
+        }
+        records
     }
 
     /// Convert the HashMap `soft_bins` into a `DataFrame` format

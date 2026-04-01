@@ -209,11 +209,11 @@ fn get_mir(fname: &Bound<'_, PyAny>) -> PyResult<MIR> {
 /// ```
 #[pyfunction]
 fn get_raw_records(fname: &Bound<'_, PyAny>) -> PyResult<Vec<Record>> {
-    let stdf = match resolve_source(fname)? {
-        Source::Path(path) => STDF::from_fname(&path)?,
-        Source::Bytes(bytes) => STDF::from_reader(Cursor::new(bytes))?,
+    let records = match resolve_source(fname)? {
+        Source::Path(path) => STDF::get_raw_records_from_fname(&path),
+        Source::Bytes(bytes) => STDF::get_raw_records_from_reader(Cursor::new(bytes)),
     };
-    Ok(stdf.records)
+    Ok(records)
 }
 
 /// Helper type representing a resolved input source.

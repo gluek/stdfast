@@ -342,7 +342,7 @@ class TestStdfWriterAppend:
     def test_append_record_order(self, tmp_path):
         """Records appear in the file in exactly the order they were written."""
         path = str(tmp_path / "append_order.stdf")
-        first = _make_first_part()  # FAR, MIR, PIR, PTR, PRR
+        first = _make_first_part()  # FAR, MIR, TSR, PIR, PTR, PRR
         second = _make_second_part()  # PIR, PTR, PRR, MRR
 
         with sf.StdfWriter(path) as w:
@@ -354,7 +354,18 @@ class TestStdfWriterAppend:
                 w.write_record(r)
 
         types = [r["record_type"] for r in sf.get_raw_records(path)]
-        assert types == ["FAR", "MIR", "PIR", "PTR", "PRR", "PIR", "PTR", "PRR", "MRR"]
+        assert types == [
+            "FAR",
+            "MIR",
+            "TSR",
+            "PIR",
+            "PTR",
+            "PRR",
+            "PIR",
+            "PTR",
+            "PRR",
+            "MRR",
+        ]
 
     def test_append_parses_both_parts(self, tmp_path):
         """parse_stdf on a split-written STDF yields both parts as data rows."""
