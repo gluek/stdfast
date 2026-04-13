@@ -1,19 +1,18 @@
 # stdfast
 This is a fork from [stupidf](https://github.com/jlazear/stupidf), jlazear
 
-`stdfast` is a library for parsing and writing of STDF files. The `STDF` structure can be used
-directly in rust, or alternatively sent out to Python. The library exposes several functions to read and write STDF file records from python. Additionally, there is a pydantic model for each record type to simplify the handling in python.
+`stdfast` is a library for parsing and writing of STDF files. The library exposes several functions to read and write STDF file records from python. Additionally, there is a pydantic model for each record type to simplify the handling in python.
 
 STDF is the [Standard Test Data Format](https://en.wikipedia.org/wiki/Standard_Test_Data_Format) and is commonly used for high-volume test of semiconductors in Automated Test Equipment (ATE) systems. 
 
-The purpose of the library is to quickly and efficiently parse and write STDF files (which are a fairly unfriendly binary linked list-based format).
+The purpose of the library is to quickly and efficiently parse and write STDF files.
 
 
 # Examples
 
 ## Python
 
-Also contains Python bindings to this functionality, e.g.
+Python bindings to the underlying rust reader/writer
 
 ### Parsing
 
@@ -110,76 +109,11 @@ with sf.StdfWriter("output.stdf", append=True) as w:
 
 `StdfWriter` is preferable when the number of records is large or unknown upfront, since it never holds more than one record in memory at a time.
 
-## Rust
-
-### Parsing
-
-```rust
-use stdfast::data::STDF;
-use polars::prelude::*;
-
-let verbose = false;
-if let Ok(stdf) = STDF::from_fname(&fname, verbose) {
-    let df: DataFrame = (&stdf.test_data).into();
-    let df_fmti: DataFrame = (&stdf.test_data.test_information).into();
-    println!("{df:#?}");
-    println!("{df_fmti}");
-    }
-```
-
-`Records` is a lazy iterator over `RawRecord`s. Each `RawRecord` reads from the file but does not
-parse its contents until `.resolve()` is called, which returns an `Option<Record>`. This lets you
-skip or filter records without paying the parsing cost for every one.
-
-**Print every record as ATDF text:**
-```rust
-use stdfast::records::Records;
-
-let records = Records::new("my_stdf.stdf")?;
-for raw in records {
-    if let Some(record) = raw.resolve() {
-        println!("{record}");
-    }
-}
-```
-
-**Collect only PTR records, resolving nothing else:**
-```rust
-use stdfast::records::{Records, record_impl::Record};
-
-let ptrs: Vec<_> = Records::new("my_stdf.stdf")?
-    .filter_map(|raw| raw.resolve())
-    .filter_map(|r| if let Record::PTR(ptr) = r { Some(ptr) } else { None })
-    .collect();
-```
-
-**Count records by type without resolving any:**
-```rust
-use stdfast::records::{Records, RecordSummary};
-
-let mut summary = RecordSummary::new();
-for raw in Records::new("my_stdf.stdf")? {
-    summary.add(&raw);
-}
-for (rtype, count) in summary {
-    println!("{rtype:?}: {count}");
-}
-```
-
-**Find the first failing PTR:**
-```rust
-use stdfast::records::{Records, record_impl::Record};
-
-let first_fail = Records::new("my_stdf.stdf")?
-    .filter_map(|raw| raw.resolve())
-    .filter_map(|r| if let Record::PTR(ptr) = r { Some(ptr) } else { None })
-    .find(|ptr| !ptr.pass());
-```
-
-
 # Installation
 
-There is no cargo or pypi release yet.
+```bash
+pip install stdfast
+```
 
 ## Building from source
 
@@ -191,7 +125,7 @@ cargo build
 
 Python bindings (requires an active virtualenv):
 
-```
+```bash
 pip install maturin
 maturin develop
 ```
